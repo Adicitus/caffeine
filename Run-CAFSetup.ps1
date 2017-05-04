@@ -3,7 +3,7 @@
 . "$PSScriptRoot\Common\ShoutOut.ps1"
 . "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\Common\New-PSCredential.ps1"
-. "$PSScriptRoot\Common\Parsing\[Strict]Parse-ConfigFile_v2.ps1"
+. "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
 . "$PSScriptRoot\Create-VMSwitch.ps1"
 . "$PSScriptRoot\CAF-VMs.ps1"
 
