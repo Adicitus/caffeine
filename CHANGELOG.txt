@@ -1,3 +1,9 @@
+ - Removed the _CAF* variables from Rearm-VMs and moved the rearm snippet to the common folder.
+   ActiveRearm-VM is now completely separated from Caffeine
+ - Added the Caffeine directory to version control. The Common folder is subject to separate version control
+   and as such is not included in the Caffeine repository.
+   	[12:57 PM 5/4/2017, Joakim]
+
  - Added more extensive support for symbolic links to the [Install] section of Hive.ini files.
    In the old implementation the syntax was:
 		symlink=<PathToSymlink>
