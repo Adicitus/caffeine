@@ -1,0 +1,42 @@
+﻿# Collect, Analyze, Fix Setup
+
+. "$PSScriptRoot\Common\ShoutOut.ps1"
+. "$PSScriptRoot\Common\Run-Operation.ps1"
+. "$PSScriptRoot\Common\New-PSCredential.ps1"
+. "$PSScriptRoot\Common\Parsing\[Strict]Parse-ConfigFile_v2.ps1"
+. "$PSScriptRoot\Create-VMSwitch.ps1"
+. "$PSScriptRoot\CAF-VMs.ps1"
+
+
+<#
+.WISHLIST
+    - Move iterating over the VMPaths to CAF-VMs and operate on VHDs/VMs from all paths at once. [Done]
+    - Decouple Rearm-VMs from CAF-VHDs by having CAF-VMs decide which VMs should be rearmed instead of Rearm-VMs.
+.SYNOPSIS
+    Collects, analyzes and makes fixes to VMs and their associated VHDs
+#>
+function Run-CAFSetup {
+    param(
+        $Configuration,
+        [Switch]$SkipActiveVMRearm
+    )
+
+    # $config = { Parse-ConfigFile $JobFile -NotStrict } | Run-Operation
+
+    if ($Configuration -is [System.Management.Automation.ErrorRecord]) {
+        shoutOut "Unable to load the configuration file! Aborting CAFSetup" Red
+        return
+    }
+
+    $networks = $Configuration.Keys | ? { $_ -match "^Network" } 
+
+    shoutOut "Configuring VMSwitches..." Cyan
+    $networks | % {
+        Create-VMSwitch $_ $Configuration[$_]
+    }
+
+    if ($VMFolders = $conf.HyperVStep.VMPath) {
+        shoutOut "CAFing VMs in '$( $VMFolders -join ", " ) '"
+        CAF-VMs -VMFolders $VMFolders -Configuration $Configuration -NoRearm:$SkipActiveVMRearm
+    }
+}

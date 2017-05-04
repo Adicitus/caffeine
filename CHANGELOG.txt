@@ -1,0 +1,36 @@
+ - Added more extensive support for symbolic links to the [Install] section of Hive.ini files.
+   In the old implementation the syntax was:
+		symlink=<PathToSymlink>
+   which would create a symbolic link at PathToSymlink which pointed to the volume.
+   
+   In the new imlementation the syntax is:
+		symlink=<PathToSymlink>[<Separator><TargetOfSymlink>]
+   which lets us specify a symlink pointing to an arbitrary location (e.g. a file or folder in the hive).
+   Valid Separators are any characters that cannot appear in a valid filesystem path (|:<>*?"). If the
+   TargetOfSymlink is omitted the old behavior is used and the generated symlink will point to the hive.
+	[02:13 2017-05-02, Joakim]
+	
+ - Added a full installation of DISM 10.0.14393.0 to the Common directory under bin\, so
+   as not to rely on the local dism (which may vary from instllation to installation).
+    [18:13 2017-04-27, Joakim]
+	
+ - Added support for the MountPoint declaration to the [Install] section. This will cause Install-HiveDisk
+   to add a mountpoint for the hive-vhd volume, e.g.:
+	MountPoint=C:\VMs\MyCourse
+   
+   However, for Hyper-V items like VHDs and Virtual Machine Files to use a mountpoint when resolving interal paths (e.g. parent paths)
+   it must be the 'first' mountpoint for the volume. By contrast, the paths for any filesystem items we retrieve (e.g. with Get-item, Get-VHD)
+   will reflect the path we used to retrieve it, with no way to find the canonical path for the item.
+
+   Normally if the volume has been assigned a drive letter, then the first mountpoint would be '[DriveLetter]:\', so the drive
+   letter must be removed if we want Hyper-V to use the custom mountpoint.
+
+   So the MountPoint directive is not compatible with the DriveLetter directive, and adding a MountPoint directive will cause
+   any driveletter set by the  DriveLetter directive to be removed.
+
+   MountPoint directives are always handled after any DriveLetter directives, and so will always override them.
+
+ - To support the MountPoint functionality, a function was added to retrieve the Paths to a given volume 'Find-VolumePath'.
+   Where possible when handling volumes, scripts should use a Find-VolumePath to determine how a volume should be accessed,
+   rather than using driveletters.
+	[5:30 PM 4/19/2017, Joakim] [Caffeine is now version 1.2 Beta. Caffeine[Beta] ]
