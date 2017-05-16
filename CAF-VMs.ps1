@@ -1,8 +1,8 @@
 ﻿. "$PSScriptRoot\Common\New-PSCredential.ps1"
 . "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
 . "$PSScriptRoot\Common\Rebase-VHDFiles.ps1" -Import
-. "$PSScriptRoot\CAF-VHDs_v2.ps1"
-. "$PSScriptRoot\Rearm-VMs_v2.ps1"
+. "$PSScriptRoot\CAF-VHDs.ps1"
+. "$PSScriptRoot\Rearm-VMs.ps1"
 
 
 function CAF-VMs {
