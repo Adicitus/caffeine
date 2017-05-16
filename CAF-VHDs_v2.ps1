@@ -3,6 +3,7 @@
 . "$PSScriptRoot\Common\ShoutOut.ps1"
 . "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\Common\Find-VolumePath.ps1"
+. "$PSScriptRoot\Common\Query-RegValue.ps1"
 . "$PSScriptRoot\Configure-OfflineHKLM.ps1"
 . "$PSScriptRoot\Configure-OfflineHKUs.ps1"
 
@@ -176,7 +177,7 @@ function CAF-VHDs {
             return
         }
 
-        shoutOut " Mounting as a disk image..." Cyan
+        shoutOut " Mounting as a VHD..." Cyan
         
 
         $VHDfile = $record.File
@@ -295,7 +296,9 @@ function CAF-VHDs {
 
         $r = { $currentVHD | Dismount-VHD } | Run-Operation
         if (($r | ? { $_ -is [System.Management.Automation.ErrorRecord] })) {
+            shoutOut "Failed to dismount the VHD!" Red
             $_.UnmountError = $r
+            shoutOut $r
         }
 
         ShoutOut "Done!" Green

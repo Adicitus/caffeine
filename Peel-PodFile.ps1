@@ -13,25 +13,25 @@ function Peel-PodFile($podFile){
             # Mount disk, attach to correct directory using symlink,
             # add an task on startup to mount the disk.
 
-            Install-HiveDisk $PodFile
+            { Install-HiveDisk $PodFile } | Run-Operation -OutNull
             break;
         }
         # Files is a MOCSetup-style clusterpod.
         "\.archives\.vhd(x)?$" { # proposed naming convention
             ShoutOut "Cluster Pod" Green
-            Unpack-ArchiveDisk $PodFile
+            { Unpack-ArchiveDisk $PodFile } | Run-Operation -OutNull
             break;
         }
         "\.vhd(x)?$" { # Legacy entry for backwards compatibility with MOCSetup
             ShoutOut "Cluster Pod (Legacy)" Green
-            Unpack-ArchiveDisk $PodFile
+            { Unpack-ArchiveDisk $PodFile } | Run-Operation -OutNull
             break;
         }
         # File is the first part in a classic multi-part RAR file.
         "\.part[0]*1\.rar$" {
             shoutOut "Multipart RAR" Green
             # Unpack to comment path, or to C:\
-            Unpack-RARFile $PodFile
+            { Unpack-RARFile $PodFile } | Run-Operation -OutNull
             break;
         }
         # File is a non-first part of a classic multipart RAR file.
@@ -43,14 +43,14 @@ function Peel-PodFile($podFile){
         "\.rar$" {
             shoutOut "RAR"
             # Unpack to comment path, or to C:\
-            Unpack-RARFile $PodFile
+            { Unpack-RARFile $PodFile } | Run-Operation -OutNull
             break;
         }
         # File is the first part in a multi-part SFX RAR file.
         "\.part[0]*1\.exe$" {
             shoutOut "Multipart SFX RAR"
             # Unpack to comment path, or to C:\
-            Unpack-RARFile $PodFile
+            { Unpack-RARFile $PodFile } | Run-Operation -OutNull
             break;
         }
         # File is the non-first part in a multi-part SFX RAR file.
