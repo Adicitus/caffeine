@@ -129,13 +129,32 @@ $installSteps[4] = @{ # Mostly here to run operations when HyperVStep is done.
         Set-RegValue $registryKey "InstallStep" 5 REG_DWORD
     }
 }
+$installSteps[5] = @{ # This step will be repeated everytime the script is run.
+    Name="WatchdogStep"
+    Caption="Checking environment..."
+    Block = {
+        
+        shoutOut "WinRM state:"
+        {sc.exe queryex winrm} | Run-Operation -OutNull
+        shoutOut "Checking WinRM Configuration... " Cyan
+        $winrmConfig = { sc.exe qc winrm } | Run-Operation
+        if (!($winrmConfig | ? { $_ -match "START_TYPE\s+:\s+2"})) { # 2=Autostart
+            { sc.exe config winrmstart= auto } | Run-Operation -OutNull
+        }
+        shoutOut "Done checking configuration"
+
+        return $true # Signal 'stop'
+    }
+}
+
+
 
 $stepN = Query-RegValue  $registryKey "InstallStep"
 
 if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have been set up, looking for configs!
 
 while ($step = $installSteps[$stepN]){
-    ShoutOut "Installation step: $stepN" cyan
+    ShoutOut "Installation step: $stepN ($($step.Name))" cyan
     ShoutOut ("=" * 80) cyan
     
     shoutOut "Running operations..." Cyan
@@ -155,10 +174,13 @@ while ($step = $installSteps[$stepN]){
     }
 
     shoutOut "$($step.caption)" magenta
-    . $step.block
+    $Stop = . $step.block
     shoutOut "Step Block done!" Magenta
     Set-Regvalue $registryKey "NextOperation" 0 
     $stepN = Query-RegValue  $registryKey "InstallStep"
+    if ($Stop -is [bool] -and $Stop) {
+        break;
+    }
 }
 
 shoutOut "Caffeination done!" Green
