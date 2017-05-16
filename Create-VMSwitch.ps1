@@ -1,4 +1,5 @@
-﻿. "$PSScriptRoot\Common\RegexPatterns.ps1"
+﻿. "$PSScriptRoot\Common\Run-Operation.ps1"
+. "$PSScriptRoot\Common\RegexPatterns.ps1"
 
 Function Create-VMSwitch{
     param(
@@ -12,12 +13,16 @@ Function Create-VMSwitch{
         return
     }
 
-    if ($s = { Get-VMSwitch | ? { $_.Name -eq $Config.Name }  } | Run-Operation) {
-        $CurSwitch = $s
-        { $CurSwitch | Set-VMSwitch -Notes "Modified during setup of '$NetworkTitle'." } | Run-Operation
+    if ($CurSwitch = { Get-VMSwitch | ? { $_.Name -eq $Config.Name }  } | Run-Operation) {
+        { $CurSwitch | Set-VMSwitch -Notes "Modified during setup of '$NetworkTitle'.`n$($CurSwitch.Notes)" } | Run-Operation
     } else {
         $CurSwitch = { New-VMSwitch -Name $Config.Name -SwitchType Private } | Run-Operation
         { $CurSwitch | Set-VMSwitch -Notes "Automatically created during setup ('$NetworkTitle')." } | Run-Operation
+    }
+
+    if (!$CurSwitch) {
+        shoutOut "ERROR: No switch found or created!" -ForegroundColor Red
+        return
     }
 
     if ($config.Type) {
@@ -97,6 +102,40 @@ Function Create-VMSwitch{
             }
             
             { $adapter | New-NetIPAddress -IPAddress $Config.IPAddress -PrefixLength:$pl } | Run-Operation | Out-Null *> $null
+        }
+    }
+
+    if ($config.DNS) {
+        shoutOut "Adding DNS addresses..." Cyan
+        $config.DNS | % {
+            if ($_ -match $RegexPatterns.IPv4Address) {
+                shoutOut "Adding '$_'... " -NoNewline
+            } else {
+                shoutOut "Invalid address: '$_'" Red
+                return
+            }
+            $physadapter = if ($CurSwitch = Get-VMSwitch -SwitchType External -ea SilentlyContinue) {
+                Get-NetAdapter | ? { $_.InterfaceAlias -like "*$($CurSwitch.Name)*" }
+            } else {
+                Get-NetAdapter -Physical
+            }
+            if (!$physadapter) {
+                shoutOut "No external network adapter found!" Red
+                return
+            }
+            $DNSAddresses = $physadapter | Get-DnsClientServerAddress -AddressFamily IPv4 | % { $_.ServerAddresses }
+            if ($DNSAddresses.Contains($_)) {
+                shoutOut "'$_ already added!'" green
+                return
+            }
+            
+            [array]::Resize([ref]$DNSAddresses, ($DNSAddresses.Length + 1))
+            for ($i = ($DNSaddresses.Length-2); $i -ge 0; $i--) { # Shift existing addresses down the list of DNSServers...
+                $DNSaddresses[$i+1] = $DNSaddresses[$i]
+            }
+            $DNSAddresses[0] = $_
+            $PhysAdapter | Set-DnsClientServerAddress -ServerAddresses $DNSAddresses
+            shoutOut "Done adding $_!" Green
         }
     }
 
