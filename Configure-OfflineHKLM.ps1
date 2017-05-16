@@ -26,6 +26,10 @@ function Configure-OfflineHKLM {
             { reg add $rootKey\CAFSetup /v AutorunCount /t REG_DWORD /d 0 },
             { reg add $rootKey\CAFSetup /v AutorunBootstrap /t REG_SZ /d "$($CAFAutorunBootstrap.ToString())"},
             { reg add $rootKey\CAFSetup /v AutorunScript /t REG_SZ /d "$($CAFAutorunScript.ToString())"},
+            
+            { reg add "$rootKey\CAFSetup\Actions"},
+            { reg add "$rootKey\CAFSetup\Actions\OnRearm"},
+            { reg add "$rootKey\CAFSetup\Actions\OnRearm" /v action /t REG_SZ /d "promptRestart"}
             { reg query $rootKey\CAFSetup }
         )
 
