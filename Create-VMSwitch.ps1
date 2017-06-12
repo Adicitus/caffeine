@@ -65,7 +65,8 @@ Function Create-VMSwitch{
                     { $CurSwitch |Set-VMSwitch -NetAdapterInterfaceDescription $adapter -AllowManagementOS $true} | Run-Operation
                 }
                 NAT {
-                    shoutOut "NAT switches are not implemented at this time!" Yellow
+                    shoutOut "NAT switches are not implemented at this time! Defaulting to Internal." Yellow
+                    { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Run-Operation
                 }
             }
         }
@@ -95,10 +96,10 @@ Function Create-VMSwitch{
                 $bs = ($Config.Netmask -split "\." | % {
                     [Convert]::toString($_,2)
                 }) -join ""
-                shoutOut "$bs "
+                shoutOut "$bs " -NoNewline
                 $pl = ($bs -replace "0","").Length
                 $d.PrefixLength = $pl
-                shoutOut "($pl)"
+                shoutOut "(PrefixLength=$pl)"
             }
             
             { $adapter | New-NetIPAddress -IPAddress $Config.IPAddress -PrefixLength:$pl } | Run-Operation | Out-Null *> $null
@@ -114,16 +115,11 @@ Function Create-VMSwitch{
                 shoutOut "Invalid address: '$_'" Red
                 return
             }
-            $physadapter = if ($CurSwitch = Get-VMSwitch -SwitchType External -ea SilentlyContinue) {
-                Get-NetAdapter | ? { $_.InterfaceAlias -like "*$($CurSwitch.Name)*" }
-            } else {
-                Get-NetAdapter -Physical
-            }
-            if (!$physadapter) {
-                shoutOut "No external network adapter found!" Red
-                return
-            }
-            $DNSAddresses = $physadapter | Get-DnsClientServerAddress -AddressFamily IPv4 | % { $_.ServerAddresses }
+            $adapter = Get-NetAdapter | ? { $_.InterfaceAlias -like "*$($CurSwitch.Name)*" } | Select -First 1
+            $DNSAddresses = $adapter| Get-DnsClientServerAddress -AddressFamily IPv4 | % { $_.ServerAddresses }
+            
+            if ($DNSAddresses -eq $null) { $DNSAddresses = @() }
+
             if ($DNSAddresses.Contains($_)) {
                 shoutOut "'$_ already added!'" green
                 return
@@ -134,7 +130,8 @@ Function Create-VMSwitch{
                 $DNSaddresses[$i+1] = $DNSaddresses[$i]
             }
             $DNSAddresses[0] = $_
-            $PhysAdapter | Set-DnsClientServerAddress -ServerAddresses $DNSAddresses
+            shoutOut ("[{0}] New DNS server list: {1}" -f $adapter.InterfaceAlias,($DNSAddresses -join ", ") )
+            $adapter | Set-DnsClientServerAddress -ServerAddresses $DNSAddresses
             shoutOut "Done adding $_!" Green
         }
     }

@@ -1,3 +1,7 @@
+ - The project has been moved over to version control using Git. This will be used to document major changes or central concepts,
+   but a running log of the changes made to the system will be kept in the git version archive. Use "git log" to see the changelog.
+        [3:20 PM 5/18/2017, Joakim]
+
  - Removed the _CAF* variables from Rearm-VMs and moved the rearm snippet to the common folder.
    ActiveRearm-VM is now completely separated from Caffeine
  - Added the Caffeine directory to version control. The Common folder is subject to separate version control
