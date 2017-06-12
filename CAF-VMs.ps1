@@ -1,5 +1,4 @@
-﻿. "$PSScriptRoot\Common\New-PSCredential.ps1"
-. "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
+﻿. "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
 . "$PSScriptRoot\Common\Rebase-VHDFiles.ps1" -Import
 . "$PSScriptRoot\CAF-VHDs.ps1"
 . "$PSScriptRoot\Rearm-VMs.ps1"
@@ -8,13 +7,7 @@
 function CAF-VMs {
     param(
         [parameter(Mandatory=$false, Position=1)]$VMFolders='C:\Program Files\Microsoft Learning',
-        [parameter(Mandatory=$false, Position=2)]$Credentials=@( 
-            (New-PSCredential ".\Administrator" 'Pa$$w0rd'),
-            (New-PSCredential ".\Admin" 'Pa$$w0rd'),
-            (New-PSCredential ".\Administrator" 'Pa55w.rd'),
-            (New-PSCredential ".\Admin" 'Pa55w.rd')
-        ),
-        [parameter(Mandatory=$false, position=3)]$Configuration = @{  },
+        [parameter(Mandatory=$false, position=2)]$Configuration = @{  },
         [Switch]$NoRearm
     )
 
@@ -100,7 +93,7 @@ function CAF-VMs {
 
     if (!$NoRearm) {
         shoutOUt "Rearming $( ($VMsToRearm | % { $_.VMName }) -join ", " )"
-        Rearm-VMs $VMsToRearm $Credentials
+        Rearm-VMs $VMsToRearm $Configuration
     }
 
     Get-VM | % {
