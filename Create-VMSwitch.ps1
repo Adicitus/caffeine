@@ -82,15 +82,20 @@ Function Create-VMSwitch{
         shoutOut "Performing additional configuration..." Cyan
     }
 
-    if ($config.IPAddress) {
+    if ($config.IPAddress -or $config.IP) {
         shoutOut "Checking if we're using the correct IP address" Cyan
         $adapter = Get-NetAdapter "*($($CurSwitch.Name))"
         $ipAddress = $adapter | Get-NetIPAddress | % { $_.IPAddress }
+        $targetIpAddress = if ($config.IPAddress) {
+            $config.IPAddress
+        } elseif ($config.IP) {
+            $config.IP
+        }
 
-        if ( !($ipAddress -match $config.IPAddress) ) {
-            shoutOut "Adding new IP address... ($($config.IPAddress))" Cyan
+        if ( !($ipAddress -match $targetIpAddress) ) {
+            shoutOut "Adding new IP address... ($($targetIpAddress))" Cyan
             $d = @{ }
-            $d.IPAddress = $config.IPAddress
+            $d.IPAddress = $targetIpAddress
             if ($Config.Netmask -match $RegexPatterns.IPv4Netmask) {
                 shoutOut "Using netmask '$($Config.Netmask)': " Cyan -NoNewline
                 $bs = ($Config.Netmask -split "\." | % {
@@ -102,7 +107,7 @@ Function Create-VMSwitch{
                 shoutOut "(PrefixLength=$pl)"
             }
             
-            { $adapter | New-NetIPAddress -IPAddress $Config.IPAddress -PrefixLength:$pl } | Run-Operation | Out-Null *> $null
+            { $adapter | New-NetIPAddress -IPAddress $targetIpAddress -PrefixLength:$pl } | Run-Operation | Out-Null *> $null
         }
     }
 
@@ -137,7 +142,8 @@ Function Create-VMSwitch{
     }
 
     if ($conf.DefaultGateway) {
-        # Add correct NetRoute.
+        # Add correct NetRoute. Can cause a lot of trouble if done incorrectly.
+        # Proceed with caution.
     }
 
     shoutOut "Done!" Green
