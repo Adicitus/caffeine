@@ -4,6 +4,7 @@
 . "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\Common\New-PSCredential.ps1"
 . "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
+. "$PSScriptRoot\Configure-NAT.ps1"
 . "$PSScriptRoot\Create-VMSwitch.ps1"
 . "$PSScriptRoot\CAF-VMs.ps1"
 
@@ -34,6 +35,9 @@ function Run-CAFSetup {
     $networks | % {
         Create-VMSwitch $_ $Configuration[$_]
     }
+
+    ShoutOUt "Configuring NAT..."
+    Configure-NAT $Configuration
 
     if ($VMFolders = $conf.HyperVStep.VMPath) {
         shoutOut "CAFing VMs in '$( $VMFolders -join ", " ) '"
