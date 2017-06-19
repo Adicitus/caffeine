@@ -16,7 +16,7 @@ function PassiveRearm-VM {
         }
     )
 
-    shoutOut "Attempting passive rearm of $($vm.VMName)..."
+    shoutOut ("Attempting Passive Rearm: $($vm.VMName) ".PadRight(80,'=')) Magenta
 
     $offlineSoftwareMP = "HKLM\OFFLINE-SOFTWARE"
     $vhdCooldownTimeout = 5000
@@ -30,11 +30,11 @@ function PassiveRearm-VM {
             action=@{Original=$null;Config="alwaysShutdown"; Type="REG_SZ"}
         }
         "$offlineSoftwareMP\Microsoft\Windows NT\CurrentVersion\Winlogon" = @{
-            AutoAdminLogon  = @{ Original=$null; Config=1; Type="REG_DWORD" }
+            AutoAdminLogon  = @{ Original=$null; Config=1; Type="REG_SZ" }
             DefaultUserName = @{ Original=$null; Config=$credentialEntry.Username; Type="REG_SZ" }
             DefaultDomainName = @{ Original=$null; Config=$credentialEntry.Domain; Type="REG_SZ" }
             DefaultPassword = @{ Original=$null; Config=$credentialEntry.Password; Type="REG_SZ" }
-            AutoLogonCount = @{ Original=$null; Config=1; Type="REG_DWORD" }
+            AutoLogonCount = @{ Original=$null; Config=1000; Type="REG_DWORD" }
         }
     }
 
@@ -62,27 +62,33 @@ function PassiveRearm-VM {
                 continue
             } else {
                 shoutOut "Windows directory found!" Green
+                shoutOut "Loading SOFTWARE registry..."
                 { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Run-Operation -OutNull
 
                 foreach( $key in $regConfig.Keys ) {
                     foreach ($value in $regConfig[$key].Keys) {
                         $regConfig[$key][$value].Original = Query-RegValue $key $value
-                        Set-RegValue $key $value $regConfig[$key][$value].Config
+                        sleep -Milliseconds 100
+                        Set-RegValue $key $value $regConfig[$key][$value].Config $regConfig[$key][$value].Type
+                        sleep -Milliseconds 100
                     }
                 }
 
+                shoutOut "Unloading SOFTWARE registry..."
                 { reg unload $offlineSoftwareMP } | Run-Operation -OutNull
 
                 sleep -Milliseconds $vhdCooldownTimeout # sleep to avoid timing error between the dismounting of the VHD and unloading the registry.
             }
         }
 
+        shoutOut "Dismounting VHD..."
         $vhd | Dismount-VHD
         # $regConfig
     }
 
     # Start the VM to let CAF-GuestMachine run.
-    $rearmTimeout = 120000
+    $rearmTimeout1 = 120000
+    $rearmTimeout2 = 180000
     $rearmStart = Get-Date
     
     shoutOut "Starting VM..."
@@ -92,9 +98,13 @@ function PassiveRearm-VM {
     $vm = $vm | Get-VM
     while ($vm.state -eq "Running") {
         $duration = (Get-Date) - $rearmStart
-        if ($duration.TotalMilliseconds -ge $rearmTimeout) {
-            shoutOut "Rearm timed out! Forcing TurnOff" Red
+        if ($duration.TotalMilliseconds -ge $rearmTimeout1) {
+            shoutOut "Rearm timed out! Shutting down..." Red
             $success = $false
+            $vm | Stop-VM -Force
+        }
+        if ($duration.TotalMilliseconds -ge $rearmTimeout2) {
+            shoutOut "Rearm timed out! Forcing TurnOff..." Red
             $vm | Stop-VM -TurnOff -Force
             break
         }
@@ -128,6 +138,7 @@ function PassiveRearm-VM {
                 continue
             } else {
                 shoutOut "Windows directory found!" Green
+                shoutOut "Loading SOFTWARE registry..."
                 { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Run-Operation -OutNull
 
                 foreach( $key in $regConfig.Keys ) {
@@ -140,12 +151,14 @@ function PassiveRearm-VM {
                     }
                 }
 
+                shoutOut "Unloading SOFTWARE registry..."
                 { reg unload $offlineSoftwareMP } | Run-Operation -OutNull
                 
                 sleep -Milliseconds $vhdCooldownTimeout # sleep to avoid timing error between the dismounting of the VHD and unloading the registry.
             }
         }
-
+        
+        shoutOut "Dismounting VHD..."
         $vhd | Dismount-VHD
         # $regConfig
     }
