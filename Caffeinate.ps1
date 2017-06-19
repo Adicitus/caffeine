@@ -17,6 +17,8 @@ param(
 
 $script:_ShoutOutSettings.LogFile = "C:\CAFination.log"
 
+shoutOut "Starting caffeination..."
+
 $registryKey = "HKLM\SOFTWARE\CAFSetup"
 shoutOut "Using registry key '$registryKey'..." cyan 
 
@@ -166,7 +168,16 @@ while ($step = $installSteps[$stepN]){
     Set-Regvalue $registryKey "NextOperation" ($OperationN+1)
     while ( $operations -and ($o = @($operations)[$OperationN]) ) {
         shoutOut "Operation #$OperationN... " cyan
-        $o | Run-Operation | Out-Null
+        switch ($o) {
+            "CAFRestart" {
+                shoutOut "CAFRestart operation, Restarting host..."
+                { shutdown /r /t 0 } | Run-Operation -OutNull
+                pause
+            }
+            default {
+                $o | Run-Operation -OutNull
+            }
+        }
         shoutOut "Operation #$OperationN done!" Green
 
         $OperationN = Query-RegValue $registryKey "NextOperation"
