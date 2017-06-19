@@ -4,7 +4,7 @@
 . "$PSScriptRoot\Common\Set-RegValue.ps1"
 . "$PSScriptRoot\Common\ShoutOut.ps1"
 
-
+# ! NOTE: This function needs to be carefully maintained, it should only return $true or $false. ! #
 # ! WARNING: This function does not seem to perform as expected and may corrupt the registries of the VMs being rearmed ! #
 function PassiveRearm-VM {
     param(
@@ -17,7 +17,7 @@ function PassiveRearm-VM {
     )
 
     shoutOut ("Attempting Passive Rearm: $($vm.VMName) ".PadRight(80,'=')) Magenta
-    shoutOut ("Credentials: {0}\{1}, {0}" -f $credentialEntry.Domain,$credentialEntry.Username,$credentialEntry.Password)
+    shoutOut ("Credentials: {0}\{1}, {2}" -f $credentialEntry.Domain,$credentialEntry.Username,$credentialEntry.Password)
 
     $offlineSoftwareMP = "HKLM\OFFLINE-SOFTWARE"
     $vhdCooldownTimeout = 5000
@@ -70,7 +70,7 @@ function PassiveRearm-VM {
                     foreach ($value in $regConfig[$key].Keys) {
                         $regConfig[$key][$value].Original = Query-RegValue $key $value
                         sleep -Milliseconds 100
-                        Set-RegValue $key $value $regConfig[$key][$value].Config $regConfig[$key][$value].Type
+                        Set-RegValue $key $value $regConfig[$key][$value].Config $regConfig[$key][$value].Type | Out-Null
                         sleep -Milliseconds 100
                     }
                 }
@@ -145,9 +145,9 @@ function PassiveRearm-VM {
                 foreach( $key in $regConfig.Keys ) {
                     foreach ($value in $regConfig[$key].Keys) {
                         if ( $regConfig[$key][$value].Original ) {
-                            Set-RegValue $key $value $regConfig[$key][$value].Original
+                            Set-RegValue $key $value $regConfig[$key][$value].Original | Out-Null
                         } else {
-                            { reg delete $key /v $value /f } | Run-Operation
+                            { reg delete $key /v $value /f } | Run-Operation -OutNull
                         }
                     }
                 }
