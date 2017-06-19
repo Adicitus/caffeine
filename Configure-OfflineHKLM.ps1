@@ -17,7 +17,7 @@ function Configure-OfflineHKLM {
     if ( !($r | ? { $_ -match "CAFSetup$" }) ) {
             
         shoutOut "Setting up local CAF..." Cyan
-        $CAFAutorunBootstrap =  { start Powershell -Verb RunAs -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -Command echo Bootstrap; echo $Env:USERNAME; iex (gpv HKLM:\SOFTWARE\CAFSetup AutorunScript)' }
+        $CAFAutorunBootstrap =  { start Powershell -Verb RunAs -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -Command echo Bootstrap; echo $Env:USERNAME; iex (gp HKLM:\SOFTWARE\CAFSetup AutorunScript | % { `$_.AutorunScript })' }
         $CAFAutorunScript = { echo ('Running CAFAutorun as {0}'-f ${Env:USERNAME}) ; ls C:\CAFAutorun | ? { $_.Name -match '.bat|.ps1' } | % { try{ & $_.FullName *>&1 } catch { Write-host $_ }  } }
             
         $operations = @(
@@ -45,7 +45,7 @@ function Configure-OfflineHKLM {
     $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\Run" } | Run-Operation
     if ( !($r | ? { $_ -match "^\s*CAFAutorunTrigger" }) ) {
         shoutOut "Adding CAF autorun trigger..." Cyan
-        $r = { reg add "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -Command iex (gpv HKLM:\SOFTWARE\CAFSetup AutorunBootstrap)" } | Run-Operation
+        $r = { reg add "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -Command iex (gp HKLM:\SOFTWARE\CAFSetup AutorunBootstrap | % { `$_.AutorunBootstrap })" } | Run-Operation
         $r | % { shoutOut "`t| $_" White }
     }
 

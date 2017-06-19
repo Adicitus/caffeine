@@ -5,38 +5,51 @@
 import-module International
 
 $logFile = "C:\CAF.log"
+$log = {
+    param($msg)
+    Write-Host $msg
+    ("{0}: {1}" -f (Get-Date),$msg) >> $logFile
+}
+
+. $log "Running CAF-GuestMachine..."
 
 $sl = Get-WinSystemLocale
 if ($sl.Name -ne "en-US") {
-    Set-WinSystemLocale -SystemLocale "en-US"  *>> $logFile
+    . $log  (Set-WinSystemLocale -SystemLocale "en-US")
 }
 
 
 $hl = Get-WinHomeLocation
 if ($hl.GeoId -ne 221) {
-    Set-WinHomeLocation -GeoId 221  *>> $logFile
+    . $log (Set-WinHomeLocation -GeoId 221)
 }
 
 $dimo = Get-WinDefaultInputMethodOverride
 if (!$dimo -or ($dimo -ne "0409:0000041D")) {
-    Set-WinDefaultInputMethodOverride "0409:0000041D"  *>> $logFile
+    . $log (Set-WinDefaultInputMethodOverride "0409:0000041D")
 }
 
 $rearmPerformed = $false
 
-$Env:COMPUTERNAME
+. $log "computer: $($Env:COMPUTERNAME)"
 $rearmFiles = ls -Recurse "${env:ProgramFiles(x86)}" -Filter "*ospp.vbs" | % { $_.FullName }
-$rearmFiles | write-host $_
-$r = $rearmFiles | % { 
+. $log  ("Office Rearm files (*ospp.vbs) found: $( $rearmFiles -join ", " )")
+$r = $rearmFiles | % {
+    . $log "Checking $_"
     $r = cscript $_ /dstatus
     $rf = $r -join "`n"
     if ($rf -match "REMAINING GRACE: [0-7] days") {
-        cscript $_ /rearm *>> $logFile
+        . $log (cscript $_ /rearm *>&1)
         $rearmPerformed = $true
+        . $log "Rearmed."
+    } else {
+        . $log "No need to rearm."
     }
 
-} *> $logFile
-            
+} *>&1
+
+. $log $r
+
 $licenses = Get-WmiObject SoftwareLicensingProduct | ? {
     $_.LicenseStatus -ne 1
 } | ? {
@@ -45,19 +58,20 @@ $licenses = Get-WmiObject SoftwareLicensingProduct | ? {
 
 if ($licenses) {
     
-    $licenses | % {
-        "$($_.Description) ($($_.LicenseFamily)): $($_.LicenseStatus) ($($_.GracePeriodRemaining) minutes left, $($_.RemainingSkuReArmCount) SKU rearms left)" >> "$PSScriptRoot\Autorun.log"
+    . $log ( $licenses | % {
+            "$($_.Description) ($($_.LicenseFamily)): $($_.LicenseStatus) ($($_.GracePeriodRemaining) minutes left, $($_.RemainingSkuReArmCount) SKU rearms left)"
                 
-        try {
-            if ($_.Licensefamily -match "Office|Eval") {
-                $_.ReArmSku() *>> $logFile
-                $rearmPerformed = $true
-            }
-            sleep 10
-        } catch {
-            $_  *>> $logFile
-        }     
-    }
+            try {
+                if ($_.Licensefamily -match "Office|Eval") {
+                    $_.ReArmSku() *>&1
+                    $rearmPerformed = $true
+                }
+                sleep 10
+            } catch {
+                $_
+            }     
+        } *>&1
+    )
 
 }
 
@@ -89,27 +103,33 @@ if ($onRearmKey = Get-Item HKLM:\SOFTWARE\CAFSetup\Actions\OnRearm -ea SilentlyC
     $onRearmAction = "alwaysShutdown"
 }
 
+. $log "OnRearm: $onRearmAction"
+
 if ($rearmPerformed -or ($onRearmAction -match "^always")) {
     switch -Regex ($onRearmAction) {
         "promptShutdown" {
-            "OnRearm action: prompt for shutdown" >> $logFile
+            . $log "OnRearm action: prompt for shutdown"
             . $prompt "Shut down" "/s"
         }
         "promptRestart" {
-            "OnRearm action: prompt for restart" >> $logFile
+            . $log "OnRearm action: prompt for restart"
             . $prompt "restart" "/r"
         }
         "Shutdown" {
-            "OnRearm action: shutdown" >> $logFile
+            . $log "OnRearm action: shutdown"
             shutdown /s /t 0
         }
         "Restart" {
-            "OnRearm action: Restart" >> $logFile
+            . $log "OnRearm action: Restart"
             shutdown /r /t 0
         }
         default {
-            "Default OnRearm action: shutdown" >> $logFile
+            . $log "Default OnRearm action: shutdown"
             Shutdown /s /t 0
         }
     }
+} else {
+    . $log "No rearm performed and no 'always' action specified."
 }
+
+. $log "Finished running CAF-Guestmachine."
