@@ -64,16 +64,15 @@ function Rearm-VMs {
         
         $vm = $_
 
-        $success = ActiveRearm-VM $vm $Credentials $MaintenanceSwitch
+        $success = $false # ActiveRearm-VM $vm $Credentials $MaintenanceSwitch
 
         if (!$success) {
-            $applicableEntries = $credentialEntries | ? { $_.Credential -and ($vm.VMName -like $_.VMs) }
+            $applicableEntries = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) }
             foreach ($entry in $applicableEntries) {
-                $success = PassiveRearm-VM $vm $_
+                $success = PassiveRearm-VM $vm $entry
                 if ($success) { break }
             }
         }
-        #TODO: Add MOCSetup-style passive rearm.
         
         if (!$success) {
             shoutOut "Failed to rearm '$($vm.VMName)'!" Red

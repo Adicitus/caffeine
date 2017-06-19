@@ -17,6 +17,7 @@ function PassiveRearm-VM {
     )
 
     shoutOut ("Attempting Passive Rearm: $($vm.VMName) ".PadRight(80,'=')) Magenta
+    shoutOut ("Credentials: {0}\{1}, {0}" -f $credentialEntry.Domain,$credentialEntry.Username,$credentialEntry.Password)
 
     $offlineSoftwareMP = "HKLM\OFFLINE-SOFTWARE"
     $vhdCooldownTimeout = 5000
