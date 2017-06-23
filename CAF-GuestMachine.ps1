@@ -8,6 +8,9 @@ $logFile = "C:\CAF.log"
 $log = {
     param($msg)
     Write-Host $msg
+    if ($msg -isnot [String]) {
+        $msg = $msg | Out-String
+    }
     ("{0}: {1}" -f (Get-Date),$msg) >> $logFile
 }
 
@@ -53,13 +56,16 @@ $r = $rearmFiles | % {
 $licenses = Get-WmiObject SoftwareLicensingProduct | ? {
     $_.LicenseStatus -ne 1
 } | ? {
-    $_.PartialProductKey -and ($_.Licensefamily -match "Office|Eval") -and ( ($_.LicenseStatus -eq 5) -or ( ($_.GracePeriodRemaining -lt (1 * 24 * 60))) )
-} # wait until the last 24h to rearm, since we only get ~5 days with some versions of office.,
+    $_.PartialProductKey -and ($_.Licensefamily -match "Office|Eval")
+} | ? {
+    ($_.LicenseStatus -eq 5) -or ($_.GracePeriodRemaining -lt (1 * 24 * 60))
+}# Wait for notification state or until the last 24h to rearm, since we only
+ # get ~5 days with some versions of office.
 
 if ($licenses) {
     
-    . $log ( $licenses | % {
-            "$($_.Description) ($($_.LicenseFamily)): $($_.LicenseStatus) ($($_.GracePeriodRemaining) minutes left, $($_.RemainingSkuReArmCount) SKU rearms left)"
+    $licenses | % {
+            . $log "Rearming: $($_.Description) ($($_.LicenseFamily)): $($_.LicenseStatus) ($($_.GracePeriodRemaining) minutes left, $($_.RemainingSkuReArmCount) SKU rearms left)"
                 
             try {
                 if ($_.Licensefamily -match "Office|Eval") {
@@ -68,11 +74,12 @@ if ($licenses) {
                 }
                 sleep 10
             } catch {
-                $_
+                . $log $_
             }     
-        } *>&1
-    )
+        }
 
+} else {
+    . $log "No SoftwareLicenses need to be rearmed."
 }
 
 # Prompt for consent to restart the machine.
