@@ -59,8 +59,8 @@ function Rearm-VMs {
     $VMs | % {
         
         $vm = $_
-
-        $success = ActiveRearm-VM $vm $Credentials $MaintenanceSwitch
+        $arCreds = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) } | % { $_.Credential }
+        $success = ActiveRearm-VM $vm $arCreds $MaintenanceSwitch
 
         if (!$success) {
             $applicableEntries = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) }
