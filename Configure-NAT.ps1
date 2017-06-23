@@ -89,8 +89,8 @@ function Configure-NAT {
         }
 
         try {
-            New-NetNat @natDefinition -Confirm:$false
-            Add-NetNatExternalAddress -NatName $natDefinition.Name -IPAddress $externalConnection.Address -PortStart 44000 -PortEnd 48000
+            New-NetNat @natDefinition -Confirm:$false | Out-Null
+            Add-NetNatExternalAddress -NatName $natDefinition.Name -IPAddress $externalConnection.Address -PortStart 44000 -PortEnd 48000 | Out-Null
         } catch {
             ShoutOut "Failed to create a new NAT!" Red
             shoutOut $_
