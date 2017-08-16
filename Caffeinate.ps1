@@ -123,15 +123,37 @@ $installSteps[3] = @{
         Set-RegValue $registryKey "InstallStep" 4 REG_DWORD
     }
 }
-$installSteps[4] = @{ # Mostly here to run operations when HyperVStep is done.
+# Mostly here to run operations when HyperVStep is done.
+# Operations in the Finalize step can, for example, be used to
+# install software or perform post-import configuration on VMs.
+$installSteps[4] = @{
     Name="FinalizeStep"
     Caption="Finalizing setup..."
     Block = {
-        
         Set-RegValue $registryKey "InstallStep" 5 REG_DWORD
     }
 }
-$installSteps[5] = @{ # This step will be repeated everytime the script is run.
+$installSteps[5] = @{
+    Name="CustomizeStep"
+    Caption="Customizing account... (ie: pinning apps)"
+    Block = {
+        if ($conf.ContainsKey("Taskbar")) {
+            shoutOut "Modifying the taskbar..."
+            shoutOut "Available apps:"
+            $apps = (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items()
+            $apps | % { $_.Name } | shoutOut -ForegroundColor Gray
+            . "$PSSCriptRoot\Common\Pin-App.ps1"
+            if ($conf.Taskbar.ContainsKey("Pin")) {
+                $conf.Taskbar.Pin | ? { $_ -is [string] } | % { Pin-App $_ }
+            }
+            if ($conf.Taskbar.ContainsKey("Unpin")) {
+                $conf.Taskbar.Unpin | ? { $_ -is [string] } | % { Pin-App $_ -Unpin }
+            }
+        }
+        Set-RegValue $registryKey "InstallStep" 6 REG_DWORD
+    }
+}
+$installSteps[6] = @{ # This step will be repeated everytime the script is run.
     Name="WatchdogStep"
     Caption="Checking environment..."
     Block = {
