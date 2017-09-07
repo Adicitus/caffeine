@@ -138,16 +138,19 @@ $installSteps[5] = @{
     Caption="Customizing account... (ie: pinning apps)"
     Block = {
         if ($conf.ContainsKey("Taskbar")) {
+            if ( !(Get-Process explorer -ea SilentlyContinue) ) {
+                shoutOut "Starting explorer..."
+                Start-Process explorer
+            }
             shoutOut "Modifying the taskbar..."
             shoutOut "Available apps:"
-            $apps = (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items()
-            $apps | % { $_.Name } | shoutOut -ForegroundColor Gray
+            Run-Operation { (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | % { $_.Name } }
             . "$PSSCriptRoot\Common\Pin-App.ps1"
             if ($conf.Taskbar.ContainsKey("Pin")) {
-                $conf.Taskbar.Pin | ? { $_ -is [string] } | % { Pin-App $_ }
+                $conf.Taskbar.Pin | ? { $_ -is [string] } | % { shoutOUt "Pinning '$_'"; $_ } | % { Pin-App $_ }
             }
             if ($conf.Taskbar.ContainsKey("Unpin")) {
-                $conf.Taskbar.Unpin | ? { $_ -is [string] } | % { Pin-App $_ -Unpin }
+                $conf.Taskbar.Unpin | ? { $_ -is [string] } | % { shoutOUt "Unpinning '$_'"; $_ } | % { Pin-App $_ -Unpin }
             }
         }
         Set-RegValue $registryKey "InstallStep" 6 REG_DWORD
