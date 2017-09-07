@@ -45,7 +45,7 @@ function Configure-OfflineHKLM {
     $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\Run" } | Run-Operation
     if ( !($r | ? { $_ -match "^\s*CAFAutorunTrigger" }) ) {
         shoutOut "Adding CAF autorun trigger..." Cyan
-        $r = { reg add "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -Command iex (gp HKLM:\SOFTWARE\CAFSetup AutorunBootstrap | % { `$_.AutorunBootstrap })" } | Run-Operation
+        $r = { reg add "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -WindowStyle Hidden -Command iex (gp HKLM:\SOFTWARE\CAFSetup AutorunBootstrap | % { `$_.AutorunBootstrap })" } | Run-Operation
         $r | % { shoutOut "`t| $_" White }
     }
 
@@ -56,11 +56,22 @@ function Configure-OfflineHKLM {
         # Prevent UAC consent prompts for admins, as described @ http://www.ghacks.net/2013/06/20/how-to-configure-windows-uac-prompt-behavior-for-admins-and-users/
         "reg add $rootKey\Microsoft\Windows\CurrentVersion\Policies\System /v ConsentPromptBehaviorAdmin /t REG_DWORD /d 0 /f"
     )
+    
+
+    # Set connection metering to controlled frivolous downloads by Windows Update:
+
 
     if (Query-RegValue "$rootKey\Microsoft\Windows NT\CurrentVersion\NetworkList\DefaultMediaCost" Ethernet) {
+        
+        $ethernetCost = switch ($configuration.VMConfiguration.EthernetCost) {
+            "Free" { 1 }
+            "Metered" { 2 }
+            default { 2 }
+        }
+
         Steal-RegKey "$rootkey\Microsoft\Windows NT\CurrentVersion\NetworkList\DefaultMediaCost" | Out-Null
         # Set ethernet connections to be metered, to avoid frivolous downloads.
-        $operations += ("reg add '$rootKey\Microsoft\Windows NT\CurrentVersion\NetworkList\DefaultMediaCost' /v Ethernet /t REG_DWORD /d 2 /f")
+        $operations += ("reg add '$rootKey\Microsoft\Windows NT\CurrentVersion\NetworkList\DefaultMediaCost' /v Ethernet /t REG_DWORD /d $ethernetCost /f")
     }
 
 
