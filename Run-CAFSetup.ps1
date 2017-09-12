@@ -19,7 +19,7 @@
 function Run-CAFSetup {
     param(
         $Configuration,
-        [Switch]$SkipActiveVMRearm
+        [Switch]$SkipVMRearm
     )
 
     # $config = { Parse-ConfigFile $JobFile -NotStrict } | Run-Operation

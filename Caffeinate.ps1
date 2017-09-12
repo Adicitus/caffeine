@@ -1,8 +1,31 @@
-﻿# CAFfeinate the machine!
+﻿<# CAFfeinate the machine!
+.SYNOPSIS
+This is the core script for the Caffeine setup method, it is used to manage
+the flow of the setup process.
 
+.DESCRIPTION
+This is the core script for the Caffeine setup method, it is used to manage
+the flow of the setup process.
+
+.PARAMETER JobFile
+The path to the job file to use for this setup. If this
+parameter is not specified the the script will look for an appropriate
+configuration file to use.
+
+It starts by looking at the "JobFile" value under Under the  "HKLM\SOFTWARE\CAFSetup"
+key in the registry, and if that fails it then tries to use "C:\setup\setup.ini".
+
+The job file used by the script during it's first execution will will be used
+to populate the "HKLM\SOFTWARE\CAFSetup\JobFile" registry value.
+
+.PARAMETER SkipActiveRearm
+Flag used to skip the costly process of trying to rearm any VMs included in the
+setup. This flag is usually not used, since Run-CAFSetup should determine which
+VMs need to be rearmed.
+#>
 param(
     $JobFile = $null,
-    [Switch]$SkipActiveVMRearm
+    [Switch]$SkipVMRearm
 )
 
 . "$PSScriptRoot\Common\ShoutOut.ps1"
@@ -22,12 +45,21 @@ shoutOut "Starting caffeination..."
 $registryKey = "HKLM\SOFTWARE\CAFSetup"
 shoutOut "Using registry key '$registryKey'..." cyan 
 
+# =========================================================================== #
+# ==================== Start: Getting job configuration ===================== #
+# =========================================================================== #
+
 if (!$jobFile) {
     shoutOut "No job file specified, attempting to select one..." cyan -NoNewline
     $JobFile = "C:\setup\setup.ini"
     $f = Query-RegValue $registryKey "JobFile"
     if ($f) { $JobFile = $f }
     shoutOut " Using $JobFile..." Cyan
+}
+
+if (!(Test-Path $jobFile)) {
+    shoutOut "Unable to find the job file '$JobFile'! Quitting" Red
+    return
 }
 
 shoutOut "Parsing the job file..." Cyan
@@ -37,6 +69,11 @@ if ($conf -isnot [hashtable]) {
     return
 }
 
+$SetupRoot = Split-Path $JobFile
+
+shoutOut "Done!" Green
+
+# TODO: This should be a helper function
 $loadHiveConfigs = { # Closure to update the configuration with hive configurations
     
     Get-Volume | ? { $VolumePath = Find-VolumePath $_ -FirstOnly; $volumePath } | % { # Rewrite to use Win32_MountPoint instead of Driveletter
@@ -58,11 +95,15 @@ $loadHiveConfigs = { # Closure to update the configuration with hive configurati
 
 }
 
-$SetupRoot = Split-Path $JobFile
+Install-CAFRegistry $registryKey $conf ". '$PSCommandPath'" $JobFile $SetupRoot
 
-shoutOut "Done!" Green
+$stepN = Query-RegValue  $registryKey "InstallStep"
 
-Install-CAFRegistry $registryKey $conf ". '$PSCommandPath'"
+if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have been set up after step 2, looking for configs!
+
+# =========================================================================== #
+# ==================== Start: Defining setup-sequence ======================= #
+# =========================================================================== #
 
 $installSteps = @{}
 
@@ -115,7 +156,7 @@ $installSteps[3] = @{
         
         if (Get-module Hyper-V -ListAvailable -ErrorAction SilentlyContinue) {
             
-            Run-CAFSetup $conf -SkipActiveVMRearm:$SkipActiveVMRearm
+            Run-CAFSetup $conf -SkipVMRearm:$SkipVMRearm
 
         } else {
             shoutOut "Hyper-V is not installed, skipping..."
@@ -168,30 +209,58 @@ $installSteps[6] = @{ # This step will be repeated everytime the script is run.
         if (!($winrmConfig | ? { $_ -match "START_TYPE\s+:\s+2"})) { # 2=Autostart
             { sc.exe config winrmstart= auto } | Run-Operation -OutNull
         }
+
+        { sc.exe failure winrm reset= 84600 command= "winrm quickconfig -q -force" actions= restart/2000/run/5000 } | Run-Operation -OutNull
+
+
         shoutOut "Done checking configuration"
 
         return $true # Signal 'stop'
     }
 }
 
+# =========================================================================== #
+# ======================= Start: Setup-Sequence loop ======================== #
+# =========================================================================== #
 
+<#
+.SYNOPSIS
+Helper function, runs operations.
 
-$stepN = Query-RegValue  $registryKey "InstallStep"
+.DESCRIPTION
+Helper function to run operations specified in the job file, using a registry
+value to keep track of the next operation in the sequence of operations. This
+gives the operations the freedom to restart the computer, and the system will
+pick up from the next operation once it reboots.
 
-if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have been set up, looking for configs!
+Operations are expected to appear in the same order that they should be
+executed, and the function will not try to reorder them in any way.
 
-while ($step = $installSteps[$stepN]){
-    ShoutOut "Installation step: $stepN ($($step.Name))" cyan
-    ShoutOut ("=" * 80) cyan
-    
-    shoutOut "Running operations..." Cyan
-    
-    
-    $operations = $conf[$step.Name].Operation
+.PARAMETER regsitryKey
+The registry key under which to to store information.
 
-    $OperationN = Query-RegValue $registryKey "NextOperation"
-    Set-Regvalue $registryKey "NextOperation" ($OperationN+1)
-    while ( $operations -and ($o = @($operations)[$OperationN]) ) {
+.PARAMETER registryValue
+Registry value under $RegistryKey to store the index of the next operation in.
+
+.PARAMETER Operations
+An array of operations to be executed, these can be either string expressions or script blocks.
+
+.PARAMETER Conf
+The configuration object, passed in to make it accessible to operations that might need it.
+
+.NOTES
+This function is intended to allow the inclusion of more operation-like
+declarations in job files, like: "Pre" as an alias and new name for "Operation"
+(Operations executed before the step-block) and "Post" for operations that should be executed
+after the step-block.
+
+Additionally it may be a good idea to introduce Pre and Post hooks to [Global], that will be
+executed prior to and after the main loop.
+#>
+function runOperations($regsitryKey, $registryValue="NextOperation", $Operations, $Conf) {
+    $OperationN = Query-RegValue $registryKey $registryValue
+    Set-Regvalue $registryKey $registryValue ($OperationN+1)
+    while ( $Operations -and ($o = @($Operations)[$OperationN]) ) {
         shoutOut "Operation #$OperationN... " cyan
         switch ($o) {
             "CAFRestart" {
@@ -205,13 +274,25 @@ while ($step = $installSteps[$stepN]){
         }
         shoutOut "Operation #$OperationN done!" Green
 
-        $OperationN = Query-RegValue $registryKey "NextOperation"
-        Set-Regvalue $registryKey "NextOperation" ($OperationN+1) 
+        $OperationN = Query-RegValue $registryKey $registryValue
+        Set-Regvalue $registryKey $registryValue ($OperationN+1)
     }
+}
 
-    shoutOut "$($step.caption)" magenta
+shoutOut "Starting setup-sequence..." magenta
+while ($step = $installSteps[$stepN]){
+    ShoutOut "Installation step: $stepN ($($step.Name))" cyan
+    ShoutOut ("=" * 80) cyan
+    
+    shoutOut "Running operations..." Cyan
+    $operations = $conf[$step.Name].Operation
+    runOperations $registryKey "NextOperation" $operations $conf
+
+    shoutOut "Executing step block: $($step.caption)" magenta
     $Stop = . $step.block
     shoutOut "Step Block done!" Magenta
+
+
     Set-Regvalue $registryKey "NextOperation" 0 
     $stepN = Query-RegValue  $registryKey "InstallStep"
     if ($Stop -is [bool] -and $Stop) {

@@ -1,7 +1,13 @@
 ﻿. "$PSScriptRoot\Common\Query-RegValue.ps1"
 
 function Install-CAFRegistry {
-    param($registryKey, $conf, $AutorunScript)
+    param(
+        $registryKey,
+        $conf,
+        $AutorunScript,
+        $JobFile,
+        $SetupRoot
+    )
     $runKey = "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
 
     # { reg delete "$registryKey" /f } | Run-Operation #DEBUG
@@ -28,7 +34,7 @@ function Install-CAFRegistry {
         shoutOut "Done!" Green
     
         # The trigger script switches to a Powershell context and executes the Bootstrapper snippet, the bootstrapper
-        # snippet then starts a new Powershell context that runs with elevated privilidges and calls the AutorunScript snippet.
+        # snippet then starts a new Powershell context that runs with elevated priviledges and calls the AutorunScript snippet.
         shoutOut "Setting up CAF Autorun..." Cyan
         $CAFAutorunBootstrap =  "echo Bootstrap; echo `$Env:USERNAME; iex ((reg query '$registryKey' /v AutorunScript) | ? { `$_ -match 'REG_[A-Z]+\s+(?<s>.*)$' } | % { `$Matches.s })"
         # $CAFAutorunScript = { echo ('Running CAFAutorun as {0}'-f ${Env:USERNAME}) ; ls C:\CAFAutorun | ? { $_.Name -match '.bat|.ps1' } | % { try{ & $_.FullName *>&1 } catch { Write-host $_ }  } }
