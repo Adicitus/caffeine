@@ -42,7 +42,7 @@ function CAF-VMs {
     $compatibilityReports = $vmfiles | % {
         $file = $_.FullName
 
-        $r = { Compare-VM -Path $_.FullName -ErrorAction Stop } | Run-Operation
+        $r = { Compare-VM -Path $file -ErrorAction Stop } | Run-Operation
         if ($r -is [System.Management.Automation.ErrorRecord]) {
             switch -Wildcard ($r) {
                 "*Identifier already exists.*" {
@@ -61,12 +61,12 @@ function CAF-VMs {
         } else { return $r }
     }
     $compatibilityReports | ? { $_.Incompatibilities } | % { 
-        shoutout "Incompatibilities for '$($_.Path)' ('$($_.VM.VMName)'):" Cyan
+        shoutOut "Incompatibilities for '$($_.Path)' ('$($_.VM.VMName)'):" Cyan
         $_.Incompatibilities | % {
             shoutOut ("{0,-15} {1}" -f "$($_.Source)':",$_.Message) Red
         }
     }
-    shoutout "Done!" Green
+    shoutOut "Done!" Green
 
     shoutOut "Importing any unimported compatible VMs..." Cyan
     $r = $compatibilityReports | ? { !$_.Incompatibilities } | % {
