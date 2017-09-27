@@ -24,6 +24,7 @@ function Install-CAFRegistry {
             { reg add "$registryKey" /v JobName /t REG_SZ /d "$($conf.Job.name)" }
             { reg add "$registryKey" /v JobFile /t REG_SZ /d "$JobFile" }
             { reg add "$registryKey" /v SetupRoot /t REG_SZ /d "$SetupRoot" }
+            { reg add "$registryKey" /v CAFDir /t REG_SZ /d "$PSScriptRoot" }
             { reg add "$registryKey" /v InstallStep /t REG_DWORD /d 0 }
             { reg add "$registryKey" /v NextOperation /t REG_DWORD /d 0 }
             { reg add "$registryKey" /v InstallStart /t REG_QWORD /d (Get-Date).Ticks }
