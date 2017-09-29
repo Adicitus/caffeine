@@ -11,6 +11,10 @@ function CAF-VMs {
         [Switch]$NoRearm
     )
 
+
+    shoutOut "VMPaths:" Cyan
+    $VMFolders | % { "'$_'" } | shoutOut
+
     shoutOut "Rebasing VHDs to ensure that all chains are complete..." Cyan
     Rebase-VHDFiles $VMFolders
 
@@ -71,7 +75,7 @@ function CAF-VMs {
     shoutOut "Importing any unimported compatible VMs..." Cyan
     $r = $compatibilityReports | ? { !$_.Incompatibilities } | % {
         shoutOut "Importing '$($_.Path)' ('$($_.VM.VMName)')..."; $_
-    } | % {  {Import-VM $_ } | Run-Operation }
+    } | % { { Import-VM -Path $_.Path } | Run-Operation }
     
     shoutout "Done!" Green
 
