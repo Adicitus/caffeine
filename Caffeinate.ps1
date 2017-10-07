@@ -92,7 +92,6 @@ $loadHiveConfigs = { # Closure to update the configuration with hive configurati
             }
         }
     }
-
 }
 
 Install-CAFRegistry $registryKey $conf ". '$PSCommandPath'" $JobFile $SetupRoot
@@ -257,9 +256,11 @@ after the step-block.
 Additionally it may be a good idea to introduce Pre and Post hooks to [Global], that will be
 executed prior to and after the main loop.
 #>
-function runOperations($regsitryKey, $registryValue="NextOperation", $Operations, $Conf) {
-    $OperationN = Query-RegValue $registryKey $registryValue
-    Set-Regvalue $registryKey $registryValue ($OperationN+1)
+function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf) {
+    $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
+    
+    $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
+    Set-Regvalue $registryKey $registryValue ($OperationN+1) # Increment the pointer.
     while ( $Operations -and ($o = @($Operations)[$OperationN]) ) {
         shoutOut "Operation #$OperationN... " cyan
         switch ($o) {
@@ -274,10 +275,15 @@ function runOperations($regsitryKey, $registryValue="NextOperation", $Operations
         }
         shoutOut "Operation #$OperationN done!" Green
 
-        $OperationN = Query-RegValue $registryKey $registryValue
-        Set-Regvalue $registryKey $registryValue ($OperationN+1)
+        $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
+        Set-Regvalue $registryKey $registryValue ($OperationN+1) # Increment the pointer.
     }
 }
+
+shoutOut "Running pre-setup operations..." Cyan
+$operations = $conf["Global"].Pre
+Set-Regvalue $registryKey "NextOperation.Global" 0
+runOperations $registryKey "NextOperation.Global" $operations $conf
 
 shoutOut "Starting setup-sequence..." magenta
 while ($step = $installSteps[$stepN]){
@@ -299,6 +305,12 @@ while ($step = $installSteps[$stepN]){
         break;
     }
 }
+shoutOut "Setup-sequence ended." magenta
+
+shoutOut "Running post-setup operations..." Cyan
+$operations = $conf["Global"].Post
+Set-Regvalue $registryKey "NextOperation.Global" 0
+runOperations $registryKey "NextOperation.Global" $operations $conf
 
 shoutOut "Caffeination done!" Green
 
