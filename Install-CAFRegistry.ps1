@@ -19,15 +19,15 @@ function Install-CAFRegistry {
     if ( !(Query-RegValue $registryKey CourseID) ) {
         shoutOut "Initializing CAFSetup Registry key..." Cyan
         $operations = @(
-            { reg add "$registryKey" }
-            { reg add "$registryKey" /v CourseID /t REG_SZ /d "$($conf.Course.Id)" }
-            { reg add "$registryKey" /v JobName /t REG_SZ /d "$($conf.Job.name)" }
-            { reg add "$registryKey" /v JobFile /t REG_SZ /d "$JobFile" }
-            { reg add "$registryKey" /v SetupRoot /t REG_SZ /d "$SetupRoot" }
-            { reg add "$registryKey" /v CAFDir /t REG_SZ /d "$PSScriptRoot" }
-            { reg add "$registryKey" /v InstallStep /t REG_DWORD /d 0 }
-            { reg add "$registryKey" /v NextOperation /t REG_DWORD /d 0 }
-            { reg add "$registryKey" /v InstallStart /t REG_QWORD /d (Get-Date).Ticks }
+            { reg add "$registryKey" /f }
+            { reg add "$registryKey" /v CourseID /t REG_SZ /d "$($conf.Course.Id)" /f }
+            { reg add "$registryKey" /v JobName /t REG_SZ /d "$($conf.Job.name)" /f }
+            { reg add "$registryKey" /v JobFile /t REG_SZ /d "$JobFile" /f }
+            { reg add "$registryKey" /v SetupRoot /t REG_SZ /d "$SetupRoot" /f }
+            { reg add "$registryKey" /v CAFDir /t REG_SZ /d "$PSScriptRoot" /f }
+            { reg add "$registryKey" /v InstallStep /t REG_DWORD /d 0 /f }
+            { reg add "$registryKey" /v NextOperation /t REG_DWORD /d 0 /f }
+            { reg add "$registryKey" /v InstallStart /t REG_QWORD /d (Get-Date).Ticks /f }
             { reg query "$registryKey" }
         )
     
@@ -41,9 +41,9 @@ function Install-CAFRegistry {
         # $CAFAutorunScript = { echo ('Running CAFAutorun as {0}'-f ${Env:USERNAME}) ; ls C:\CAFAutorun | ? { $_.Name -match '.bat|.ps1' } | % { try{ & $_.FullName *>&1 } catch { Write-host $_ }  } }
         $CAFAutorunScript = $AutorunScript
         $operations = @(
-            { reg add "$registryKey" /v AutorunDir /t REG_EXPAND_SZ /d C:\CAFAutorun }
-            { reg add "$registryKey" /v AutorunBootstrap /t REG_SZ /d "$($CAFAutorunBootstrap.ToString())"}
-            { reg add "$registryKey" /v AutorunScript /t REG_SZ /d "$($CAFAutorunScript.ToString())"}
+            { reg add "$registryKey" /v AutorunDir /t REG_EXPAND_SZ /d C:\CAFAutorun /f }
+            { reg add "$registryKey" /v AutorunBootstrap /t REG_SZ /d "$($CAFAutorunBootstrap.ToString())" /f }
+            { reg add "$registryKey" /v AutorunScript /t REG_SZ /d "$($CAFAutorunScript.ToString())" /f }
             # { reg add $runKey /v CAFAutorunTrigger /t REG_SZ /d "Powershell -Command iex (gpv '$registryKey' AutorunBootstrap)" } # Old autorun trigger.
             { reg query "$registryKey" }
             { reg query $runKey }
@@ -53,11 +53,22 @@ function Install-CAFRegistry {
         shoutOut "Done!" Green
 
         shoutOut "Adding autorun trigger... " Cyan -NoNewline
+        
+        $tUsername = "Administrator"
+        $tPassword = 'Pa$$w0rd'
+
+        if (($iCred = $conf.CaffeineCredential) -and ($iCred.Username -and $iCred.Password)) {
+            $tPassword = $iCred.Password
+            $tUsername = $iCred.Username
+            if ($iCred.Domain){
+                $tUsername = "{0}\{1}" -f $iCred.Domain,$tUsername
+            }
+        }
 
         $ta = New-ScheduledTaskAction -Execute "cmd" -Argument "/C start `"CAF Autorun`" /MAX Powershell `"Get-Date > C:\autorundump; (reg query '$registryKey' /v AutorunBootstrap) | ? { `$_ -match 'REG_[A-Z]+\s+(?<s>.*)$' } | % { iex `$matches.s *>> C:\autorundump }`""
         $tt = New-ScheduledTaskTrigger -AtStartup
         $t = New-ScheduledTask -Action $ta -Trigger $tt -Settings (New-ScheduledTaskSettingsSet)
-        $r = $t | Register-ScheduledTask -User "Administrator" -Password 'Pa$$w0rd' -TaskName "CAFAutorun"
+        $r = $t | Register-ScheduledTask -User $tUsername -Password $tPassword -TaskName "CAFAutorun"
         shoutOut "Done! ($($r.State))" Green
     }
 }
