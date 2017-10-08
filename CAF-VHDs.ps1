@@ -249,6 +249,26 @@ function CAF-VHDs {
             
             shoutOut "Done!" Green
 
+            if ($vhdConfig = $Configuration[$record.FileItem.Name]) {
+
+                if ($caffeineDir = $vhdConfig.CaffeineInstallDir) {
+                    shoutOut "Installing Caffeine at '$caffeineDir'..."
+                    cp $PSScriptRoot "$VHDMountDir\$caffeineDir" -Recurse
+                    $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
+                    "C:\$caffeineDir\Caffeinate.ps1;rm '$installScript'" > $installScript
+                }
+                if ($jobFile = $vhdConfig.JobFile) {
+                    shoutOut "Trying to include a job file... ('$jobFile')"
+                    if ( Test-Path $jobFile ) {
+                        shoutOut "Including '$jobFile'..."
+                        cp $jobFile "$VHDMountDir\setup\setup.ini"
+                    } else {
+                        shoutOut "Unable to find the desired job file!" Red
+                    }
+                }
+
+            }
+
             $localeNameRegex = "[a-z]{2}-[a-z]{2}"
             $localeIdRegex1 = "[0-9a-f]{4}:[0-9a-f]{8}"
             $localeIdRegex2 = "[0-9a-f]{4}:\{[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}"
