@@ -22,8 +22,6 @@ function Run-CAFSetup {
         [Switch]$SkipVMRearm
     )
 
-    # $config = { Parse-ConfigFile $JobFile -NotStrict } | Run-Operation
-
     if ($Configuration -is [System.Management.Automation.ErrorRecord]) {
         shoutOut "Unable to load the configuration file! Aborting CAFSetup" Red
         return
@@ -39,7 +37,7 @@ function Run-CAFSetup {
     ShoutOUt "Configuring NAT..."
     Configure-NAT $Configuration
 
-    if ($VMFolders = $conf.HyperVStep.VMPath) {
+    if ($VMFolders = @($conf.HyperVStep.VMPath) + @($conf.Global.VMPath) | ? { $_ }) {
         shoutOut "CAFing VMs in '$( $VMFolders -join ", " ) '"
         CAF-VMs -VMFolders $VMFolders -Configuration $Configuration -NoRearm:$SkipActiveVMRearm
     }

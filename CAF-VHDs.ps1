@@ -165,11 +165,27 @@ function CAF-VHDs {
     }
     shoutOut "Done!" Green
 
+    if (($c = $Configuration["CAF-VHDs"]) -and ($c.ContainsKey("NoFix"))) {
+        $noFixPaths = @($c.NoFix)
+    } else {
+        $noFixPaths = @()
+    }
+    
+    if (($c = $Configuration["CAF-VHDs"]) -and ($c.ContainsKey("Fix"))) {
+        $fixPaths = @($c.Fix)
+    } else {
+        $fixPaths = @()
+    }
     
     shoutOut "Analyzing and fixing the offline images..." Cyan
     $VHDRecords | % {
         
         $record  = $_
+
+        if (($noFixPaths | ? { $record.File -match $_ }) -and !($fixPaths | ? { $record.File -match $_ })) {
+            shoutOut ("'{0}' is in the SkipPath, skipping..." -f $record.File)
+            return
+        }
 
         shoutOut "$($record.File)" Gray -NoNewline
         if ($record.ErrorCode -or $record.IsParent) {
@@ -192,6 +208,15 @@ function CAF-VHDs {
 
         $currentVHD = $currentVHD | Get-VHD
         $disk = $currentVHD | Get-Disk
+
+        $VHDWasOffline = $false
+        
+        if ($disk.OperationalStatus -eq "Offline") {
+            # need to bring the VHD online to analyze it
+            $disk | Set-Disk -IsOffline $false
+            $VHDWasOffline = $true
+        }
+
         $partitions = $disk | Get-Partition
 
         $partitions | % {
@@ -255,7 +280,7 @@ function CAF-VHDs {
                     shoutOut "Installing Caffeine at '$caffeineDir'..."
                     cp $PSScriptRoot "$VHDMountDir\$caffeineDir" -Recurse
                     $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
-                    "C:\$caffeineDir\Caffeinate.ps1;rm '$installScript'" > $installScript
+                    "rm '$installScript';C:\$caffeineDir\Caffeinate.ps1" > $installScript
                 }
                 if ($jobFile = $vhdConfig.JobFile) {
                     shoutOut "Trying to include a job file... ('$jobFile')"
@@ -312,6 +337,10 @@ function CAF-VHDs {
             Configure-OfflineHKLM $VHDMountDir $Configuration
             Configure-OfflineHKUs $VHDMountDir $Configuration
             # Configure offline HKUs (Users\<name>\ntuser.dat)
+        }
+
+        if ($VHDWasOffline) {
+            $disk | Set-Disk -IsOffline $true
         }
 
         $r = { $currentVHD | Dismount-VHD } | Run-Operation
