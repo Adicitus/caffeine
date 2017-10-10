@@ -182,11 +182,6 @@ function CAF-VHDs {
         
         $record  = $_
 
-        if (($noFixPaths | ? { $record.File -match $_ }) -and !($fixPaths | ? { $record.File -match $_ })) {
-            shoutOut ("'{0}' is in the SkipPath, skipping..." -f $record.File)
-            return
-        }
-
         shoutOut "$($record.File)" Gray -NoNewline
         if ($record.ErrorCode -or $record.IsParent) {
             shoutOut " Skip!" White
@@ -209,18 +204,10 @@ function CAF-VHDs {
         $currentVHD = $currentVHD | Get-VHD
         $disk = $currentVHD | Get-Disk
 
-        $VHDWasOffline = $false
-        
-        if ($disk.OperationalStatus -eq "Offline") {
-            # need to bring the VHD online to analyze it
-            $disk | Set-Disk -IsOffline $false
-            $VHDWasOffline = $true
-        }
-
         $partitions = $disk | Get-Partition
 
         $partitions | % {
-            
+
             $partition = $_
             $volume = $partition | get-Volume
             $volumePath = Find-VolumePath $volume -FirstOnly
@@ -246,6 +233,11 @@ function CAF-VHDs {
                 $record.WindowsEdition = $Matches.Edition
             } else {
                 $record.WindowsEdition = "Unknown"
+            }
+            
+            if (($noFixPaths | ? { $record.File -match $_ }) -and !($fixPaths | ? { $record.File -match $_ })) {
+                shoutOut ("'{0}' is in a path marked NoFix, skipping..." -f $record.File)
+                return
             }
 
             if ((Test-Path "$VHDMountDir\CAFAutorun")) { Remove-Item -Recurse -Force "$VHDMountDir\CAFAutorun" } #DEBUG
@@ -337,10 +329,6 @@ function CAF-VHDs {
             Configure-OfflineHKLM $VHDMountDir $Configuration
             Configure-OfflineHKUs $VHDMountDir $Configuration
             # Configure offline HKUs (Users\<name>\ntuser.dat)
-        }
-
-        if ($VHDWasOffline) {
-            $disk | Set-Disk -IsOffline $true
         }
 
         $r = { $currentVHD | Dismount-VHD } | Run-Operation
