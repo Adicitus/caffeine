@@ -28,7 +28,7 @@ function PassiveRearm-VM {
 
     $regConfig = @{
         "$offlineSoftwareMP\CAFSetup\actions\OnRearm"= @{
-            action=@{Original=$null;Config="alwaysShutdown"; Type="REG_SZ"}
+            action=@{Original="promptRestart";Config="alwaysShutdown"; Type="REG_SZ"}
         }
         "$offlineSoftwareMP\Microsoft\Windows NT\CurrentVersion\Winlogon" = @{
             AutoAdminLogon  = @{ Original=$null; Config=1; Type="REG_SZ" }
@@ -68,7 +68,9 @@ function PassiveRearm-VM {
 
                 foreach( $key in $regConfig.Keys ) {
                     foreach ($value in $regConfig[$key].Keys) {
-                        $regConfig[$key][$value].Original = Query-RegValue $key $value
+                        if ($regConfig[$key][$value].Original -eq $null) {
+                            $regConfig[$key][$value].Original = Query-RegValue $key $value
+                        }
                         sleep -Milliseconds 100
                         Set-RegValue $key $value $regConfig[$key][$value].Config $regConfig[$key][$value].Type | Out-Null
                         sleep -Milliseconds 100
