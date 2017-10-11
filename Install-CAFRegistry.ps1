@@ -49,6 +49,11 @@ function Install-CAFRegistry {
             { reg query $runKey }
         )
 
+        # This installation supercedes any previous CAF/CAffeine installation.
+        # If the CAFAutorunTrigger value is present under the Run key, that generally means that
+        # we are running from a VHD that has already been prepared by Caffeine.
+        if (reg query $runkey | select-strin CAFAutorunTrigger) { reg delete $runkey /v CAFAutorunTrigger /f }
+
         $operations | % { $_ | Run-Operation } | Out-Null
         shoutOut "Done!" Green
 

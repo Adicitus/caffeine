@@ -272,7 +272,7 @@ function CAF-VHDs {
                     shoutOut "Installing Caffeine at '$caffeineDir'..."
                     cp $PSScriptRoot "$VHDMountDir\$caffeineDir" -Recurse
                     $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
-                    "rm '$installScript';C:\$caffeineDir\Caffeinate.ps1" > $installScript
+                    "rm '$PSCommandPath';C:\$caffeineDir\Caffeinate.ps1" > $installScript
                 }
                 if ($jobFile = $vhdConfig.JobFile) {
                     shoutOut "Trying to include a job file... ('$jobFile')"
