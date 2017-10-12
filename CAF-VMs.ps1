@@ -96,8 +96,12 @@ function CAF-VMs {
     }
 
     if (!$NoRearm) {
-        shoutOUt "Rearming $( ($VMsToRearm | % { $_.VMName }) -join ", " )"
-        Rearm-VMs $VMsToRearm $Configuration
+        if ($VMsToRearm -and ($VMsToRearm.Count -gt 0)) {
+            shoutOUt "Rearming $( ($VMsToRearm | % { $_.VMName }) -join ", " )"
+            Rearm-VMs $VMsToRearm $Configuration
+        } else {
+            shoutOut "No VMs need to be rearmed."
+        }
     }
 
     Get-VM | % {
