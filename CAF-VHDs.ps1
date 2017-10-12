@@ -208,6 +208,11 @@ function CAF-VHDs {
 
         $partitions | % {
 
+            #-----------------------------------------------------------------#
+            #                         Start of Analysis                       #
+            #   In this section we only gather information, nothing here      #
+            #   should modify the volume in any way.                          #
+            #-----------------------------------------------------------------#
             $partition = $_
             $volume = $partition | get-Volume
             $volumePath = Find-VolumePath $volume -FirstOnly
@@ -235,10 +240,18 @@ function CAF-VHDs {
                 $record.WindowsEdition = "Unknown"
             }
             
-            if (($noFixPaths | ? { $record.File -match $_ }) -and !($fixPaths | ? { $record.File -match $_ })) {
+            #-----------------------------------------------------------------#
+            #                          End of Analysis                        #
+            #-----------------------------------------------------------------#
+
+            if (($noFixPaths | ? { $record.File -like $_ }) -and !($fixPaths | ? { $record.File -like $_ })) {
                 shoutOut ("'{0}' is in a path marked NoFix, skipping..." -f $record.File)
                 return
             }
+            #-----------------------------------------------------------------#
+            #                          Start of Fixing                        #
+            #   In this section we mnake any necessary changes to the volume. #
+            #-----------------------------------------------------------------#
 
             if ((Test-Path "$VHDMountDir\CAFAutorun")) { Remove-Item -Recurse -Force "$VHDMountDir\CAFAutorun" } #DEBUG
 
@@ -328,7 +341,10 @@ function CAF-VHDs {
         
             Configure-OfflineHKLM $VHDMountDir $Configuration
             Configure-OfflineHKUs $VHDMountDir $Configuration
-            # Configure offline HKUs (Users\<name>\ntuser.dat)
+
+            #-----------------------------------------------------------------#
+            #                           End of Fixing                         #
+            #-----------------------------------------------------------------#
         }
 
         $r = { $currentVHD | Dismount-VHD } | Run-Operation
