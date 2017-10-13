@@ -83,7 +83,8 @@ function CAF-VMs {
     $vms = Get-VM
     # Check which VMs have at least one disk containing a Windows installation:
     $VMsToRearm = $vms | ? {
-        
+        ($Configuration["CAF-VMs"].NoRearm | ? { $_ -and ($_.VMName -match $_) }) -eq $null
+    } | ? {
         $disks = $_ | Get-VMHardDiskDrive
         foreach ($disk in $disks) {
             if ($record = $VHDRecordLookup[$disk.Path]) {
