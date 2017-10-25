@@ -81,10 +81,24 @@ function CAF-VMs {
 
     shoutOut "Checking which machines need to be rearmed..." Cyan
     $vms = Get-VM
-    # Check which VMs have at least one disk containing a Windows installation:
-    $VMsToRearm = $vms | ? {
-        ($Configuration["CAF-VMs"].NoRearm | ? { $_ -and ($_.VMName -match $_) }) -eq $null
+    
+    $VMsToRearm = $vms | % {
+        shoutOut ("{0}..." -f $_.VMName) -NoNewline
+        $_
     } | ? {
+        $VMName = $_.VMName
+        # Check if the VM should be rearmed
+        $r1 = ($Configuration["CAF-VMs"].NoRearm | ? { $_ -and ($VMName -match $_) }) -eq $null
+        $r2 = ($Configuration["CAF-VMs"].Rearm   | ? { $_ -and ($VMName -match $_) }) -eq $null
+        $NoRearm = ( $r1 -and !$r2 )
+
+        if ($NoRearm) {
+            shoutOut "Is marked as 'NoRearm'."  Green
+        }
+
+        return !$NoRearm
+    } | ? {
+        # Check if the VM has at least one disk containing a Windows installation:
         $disks = $_ | Get-VMHardDiskDrive
         foreach ($disk in $disks) {
             if ($record = $VHDRecordLookup[$disk.Path]) {
@@ -92,8 +106,12 @@ function CAF-VMs {
                     return $true
                 }
             }
-            return $false
         }
+        shoutOut "Does not have a known Windows installation." Yellow
+        return $false
+    } | % {
+        shoutOut "Needs rearm!" Red
+        $_
     }
 
     if (!$NoRearm) {
