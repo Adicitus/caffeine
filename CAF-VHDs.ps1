@@ -244,7 +244,7 @@ function CAF-VHDs {
             #                          End of Analysis                        #
             #-----------------------------------------------------------------#
 
-            if (($noFixPaths | ? { $record.File -like $_ }) -and !($fixPaths | ? { $record.File -like $_ })) {
+            if (($noFixPaths | ? { $record.File -like "$_*" }) -and !($fixPaths | ? { $record.File -like "$_*" })) {
                 shoutOut ("'{0}' is in a path marked NoFix, skipping..." -f $record.File)
                 return
             }
