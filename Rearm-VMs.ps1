@@ -1,7 +1,7 @@
 ﻿. "$PSScriptRoot\Common\New-PSCredential.ps1"
 . "$PSScriptRoot\Common\ActiveRearm-VM.ps1"
+. "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\PassiveRearm-VM.ps1"
-
 function Rearm-VMs {
     param(
         [parameter(position=1)]$VMs,
@@ -51,6 +51,14 @@ function Rearm-VMs {
         return $c
     }
 
+    $preRearmOps = @()
+    $postRearmOps = @()
+
+    if ($RearmVMsConfig = $Configuration["Rearm-VMs"]) {
+        if ( ($p = $RearmVMsConfig["PreRearm"]) -and ($p -is [array]) ) { $preRearmOps = $p }
+        if ( ($p = $RearmVMsConfig["PostRearm"]) -and ($p -is [array]) ) { $postRearmOps = $p } 
+    }
+
     $MaintenanceSwitchName = "Maintenance"
 
     shoutOut "Adding '$MaintenanceSwitchName' switch..." Cyan
@@ -59,6 +67,9 @@ function Rearm-VMs {
     $VMs | % {
         
         $vm = $_
+        
+        $preRearmOps | ? { $_ } | % { Run-Operation $_ }
+        
         $arCreds = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) } | % { $_.Credential }
         $success = ActiveRearm-VM $vm $arCreds $MaintenanceSwitch
 
@@ -75,6 +86,9 @@ function Rearm-VMs {
             $notes = $vm.Notes
             $vm | Set-VM -Notes "REARM FAILED DURING SETUP, this machine may need to be rearmed manually.`n$notes"
         }
+
+        $postRearmOps | ? { $_ } | % { Run-Operation $_ }
+
     }
 
     shoutOut "Removing '$MaintenanceSwitchName' switch..." Cyan
