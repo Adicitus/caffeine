@@ -30,7 +30,11 @@ function CAF-VMs {
     shoutOut "Done!" Green
      
     shoutOut "Collecting VM files..." Cyan
-    $vmfiles = ls -Recurse $VMFolders | ? { $_.FullName -match ".*[\\/]Virtual Machines[\\/].+\.(exp|vmcx|xml)$" }
+    $t = ls -Recurse $VMFolders | ? { $_.FullName -match ".*[\\/]Virtual Machines[\\/].+\.(exp|vmcx|xml)$" }
+    shoutOut ("Found {0} files..." -f @($t).Count)
+    $VMFiles = $t | Sort -Property FullName | Get-Unique
+    shoutOut ("{0} non-duplicates..." -f @($VMFiles).Count)
+
     shoutOut "Done!" Green
     shoutOut "Collected $($vmfiles.Count) VM files..." Cyan
 

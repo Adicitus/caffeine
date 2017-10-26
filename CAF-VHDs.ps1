@@ -73,7 +73,11 @@ function CAF-VHDs {
     shoutOut "Running as '$($Env:USERNAME)'..."
 
     shoutOut "Initializing VHD records..." Cyan
-    $VHDFiles = $VMFolders | ls -Recurse -File | ? { $_.Name -match "\.(a)?vhd(x)?$" }
+    $t = $VMFolders | ls -Recurse -File | ? { $_.Name -match "\.(a)?vhd(x)?$" }
+    shoutOut ("Found {0} VHD files..." -f @($t).Count)
+    $VHDFiles = $t |Sort -Property FullName | Get-Unique
+    shoutOut ("{0} non-duplicates..." -f @($VHDFiles).Count)
+
     $VHDRecords = $VHDFiles | % {
         $r = @{
             File=$_.FullName
