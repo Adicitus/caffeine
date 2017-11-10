@@ -17,7 +17,7 @@ function Configure-OfflineHKLM {
     if ( !($r | ? { $_ -match "CAFSetup$" }) ) {
             
         shoutOut "Setting up local CAF..." Cyan
-        $CAFAutorunBootstrap =  { start Powershell -Verb RunAs -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -Command echo Bootstrap; echo $Env:USERNAME; iex (gp HKLM:\SOFTWARE\CAFSetup AutorunScript | % { $_.AutorunScript })' }
+        $CAFAutorunBootstrap =  { if ( !([System.Security.Principal.WindowsPrincipal][System.Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([System.Security.Principal.WindowsBuiltInRole]"Administrator") ) { return }; start Powershell -Verb RunAs -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -NoProfile -Command echo Bootstrap; echo $Env:USERNAME; iex (gp HKLM:\SOFTWARE\CAFSetup AutorunScript | % { $_.AutorunScript })' }
         $CAFAutorunScript = { echo ('Running CAFAutorun as {0}'-f ${Env:USERNAME}) ; ls C:\CAFAutorun | ? { $_.Name -match '.bat|.ps1' } | % { try{ & $_.FullName *>&1 } catch { shoutOut $_ }  } }
             
         $operations = @(
