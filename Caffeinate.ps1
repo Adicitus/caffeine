@@ -36,6 +36,7 @@ param(
 . "$PSScriptRoot\Common\Install-Feature.ps1"
 . "$PSScriptRoot\Install-CAFRegistry.ps1"
 . "$PSScriptRoot\Peel-PodFile.ps1"
+. "$PSScriptRoot\Verify-Assertions.ps1"
 . "$PSScriptRoot\Run-CAFSetup.ps1"
 
 $script:_ShoutOutSettings.LogFile = "C:\CAFination.log"
@@ -196,7 +197,15 @@ $installSteps[5] = @{
         Set-RegValue $registryKey "InstallStep" 6 REG_DWORD
     }
 }
-$installSteps[6] = @{ # This step will be repeated everytime the script is run.
+$installSteps[6] = @{
+    Name="VerifyStep"
+    Caption="Checking if all assertions about the current setup are satisfied..."
+    Block={
+        Verify-Assertions $conf
+        Set-RegValue $registryKey "InstallStep" 7 REG_DWORD
+    }
+}
+$installSteps[7] = @{ # This step will be repeated everytime the script is run.
     Name="WatchdogStep"
     Caption="Checking environment..."
     Block = {
@@ -255,6 +264,14 @@ after the step-block.
 
 Additionally it may be a good idea to introduce Pre and Post hooks to [Global], that will be
 executed prior to and after the main loop.
+
+[20171111, JO] Pre and Post operation index should not be tracked across restarts, but rather they
+should all be run each time the script runs. This is to keep the complexity of the system down, and
+to allow declarations like [Global].Pre and [Global].Post to be used to "prime" the system each
+time the script is run (for example by prepopulating the $conf variable with dynamic values in
+[Global].Pre).
+
+So this function won't be used outside of caffeinate.ps1 for the forseeable future.
 #>
 function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
