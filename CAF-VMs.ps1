@@ -92,8 +92,8 @@ function CAF-VMs {
     } | ? {
         $VMName = $_.VMName
         # Check if the VM should be rearmed
-        $r1 = ($Configuration["CAF-VMs"].NoRearm | ? { $_ -and ($VMName -match $_) }) -eq $null
-        $r2 = ($Configuration["CAF-VMs"].Rearm   | ? { $_ -and ($VMName -match $_) }) -eq $null
+        $r1 = ($Configuration["CAF-VMs"].NoRearm | ? { $_ -and ($VMName -match $_) }) -ne $null
+        $r2 = ($Configuration["CAF-VMs"].Rearm   | ? { $_ -and ($VMName -match $_) }) -ne $null
         $NoRearm = ( $r1 -and !$r2 )
 
         if ($NoRearm) {
