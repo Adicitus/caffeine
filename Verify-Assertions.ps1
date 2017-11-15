@@ -1,5 +1,9 @@
 
-function Verify-Assertions($conf) {
+function Verify-Assertions{
+    param(
+        [hashtable]$conf,
+        $logFile="C:\caffeinate.asserts.json"
+    )
 
     $assertTypes = @{
         Assert=@{
@@ -16,14 +20,14 @@ function Verify-Assertions($conf) {
         }
     }
 
-    $assertKeys = $conf.Keys | ? { $_ -match "^Assert:(?<name>.+)" } | % { @{ Key=$_; Name=$Matches.Name } }
+    $assertKeys = $conf.Keys | ? { $_ -match "^(?<type>Assert[^:\s]*):(?<name>.+)" } | % { @{ Key=$_; Name=$Matches.Name; Type=$Matches.Type } }
     shoutOut "Found the following Assert sections:"
     shoutOut ($assertKeys | % Key)
 
     $asserts = $assertKeys | ? { $conf[$_.Key].Test } | % {
         $assert = @{
             Name=$_.Name
-            Type="Assert"
+            Type=$_.Type
             Test=$conf[$_.Key].Test
         }
 
@@ -61,7 +65,7 @@ function Verify-Assertions($conf) {
         $result += @{ Name=$_.Name; Type=$_.Type; Description=$_.Description; Passed=$p }
     }
     
-    shoutOut "Outputting results to 'C:\caffeinate.asserts.json'..."
+    shoutOut "Outputting results to '$logFile'..."
     $json = $result | ConvertTo-Json
-    [System.IO.File]::WriteAllText("C:\caffeinate.asserts.json", $json)
+    [System.IO.File]::WriteAllText("$logFile", $json)
 }
