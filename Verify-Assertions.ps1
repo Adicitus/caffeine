@@ -24,6 +24,7 @@ function Verify-Assertions{
     shoutOut "Found the following Assert sections:"
     shoutOut ($assertKeys | % Key)
 
+
     $asserts = $assertKeys | ? { $conf[$_.Key].Test } | % {
         $assert = @{
             Name=$_.Name
@@ -31,6 +32,7 @@ function Verify-Assertions{
             Test=$conf[$_.Key].Test
         }
 
+        # An explicit type declaration overrides the implicit type declaration from the section header.
         if ($t = $conf[$_.Key].Type) {
             if ( $assertTypes.ContainsKey($t) ) {
                 $assert.type = $t
@@ -53,13 +55,19 @@ function Verify-Assertions{
     $result = @()
 
     $asserts | % {
-        shoutOut ("Checking '{0}' ({1})..." -f $_.Name, $_.Type) -NoNewLine
-        $r = try {
-            Invoke-Expression $_.Test -ErrorAction Stop
-        } catch {
-            $_
+        shoutOut ("Checking '{0}' ({1}, {2} lines)..." -f $_.Name, $_.Type, @($_.Test).length) -NoNewLine
+
+        $rs = @()
+
+        $_.Test | % {
+            $rs += try {
+                Invoke-Expression $_.Test -ErrorAction Stop
+            } catch {
+                $_
+            }
         }
-        $p = if (. $assertTypes[$_.Type].Check $r) { $true } else { $false }
+        $p = $true
+        $rs |% { if ( !(. $assertTypes[$_.Type].Check $r) ) { $p = $false } }
         $msg = if($p) { "Passed!" } else { "Failed!" }
         shoutOut $msg
         $result += @{ Name=$_.Name; Type=$_.Type; Description=$_.Description; Passed=$p }
