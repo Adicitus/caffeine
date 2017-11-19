@@ -57,17 +57,32 @@ function Verify-Assertions{
     $asserts | % {
         shoutOut ("Checking '{0}' ({1}, {2} lines)..." -f $_.Name, $_.Type, @($_.Test).length) -NoNewLine
 
+        $assert = $_
         $rs = @()
+
+        $OldErrorActionPreference = $ErrorActionPreference
+        $ErrorActionPreference = "Stop"
 
         $_.Test | % {
             $rs += try {
-                Invoke-Expression $_.Test -ErrorAction Stop
+                Invoke-Expression $_
             } catch {
                 $_
             }
         }
+
+        $ErrorActionPreference = $OldErrorActionPreference
+
         $p = $true
-        $rs |% { if ( !(. $assertTypes[$_.Type].Check $r) ) { $p = $false } }
+        if ($rs -is [array]) {
+            if ($rs.length -eq 0) {
+                $p = $false
+            } else {
+                $rs |% { if ( !(. $assertTypes[$assert.Type].Check $_) ) { $p = $false } }
+            }
+        } else {
+            if ( !(. $assertTypes[$assert.Type].Check $rs) ) { $p = $false }
+        }
         $msg = if($p) { "Passed!" } else { "Failed!" }
         shoutOut $msg
         $result += @{ Name=$_.Name; Type=$_.Type; Description=$_.Description; Passed=$p }
