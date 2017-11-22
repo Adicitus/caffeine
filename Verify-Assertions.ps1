@@ -7,10 +7,10 @@ function Verify-Assertions{
 
     $assertTypes = @{
         Assert=@{
-            Check = { param($r) $r.GetType() -ne [System.Management.Automation.ErrorRecord] }
+            Check = { param($r) ($r -eq $null) -or ($r.GetType() -ne [System.Management.Automation.ErrorRecord]) }
         }
         AssertException=@{
-            Check = { param($r) $r.GetType() -eq [System.Management.Automation.ErrorRecord] }
+            Check = { param($r) ($r -ne $null) -and ($r.GetType() -eq [System.Management.Automation.ErrorRecord]) }
         }
         AssertTrue=@{
             Check = { param($r) if ($r) { $true } else { $false } }
