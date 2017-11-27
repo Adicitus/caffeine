@@ -13,7 +13,7 @@ if ( !(Get-Item $resultsDir | ? { $_.Mode -match "^d" }) ) {
     mkdir $resultsDir
 }
 
-$tests = ls "$PSScriptRoot\*test.ini" | Sort -Property Name
+$tests = ls "$PSScriptRoot\*test.ini" | Sort-Object -Property Name
 
 $tests | % {
     $conf = Parse-ConfigFile $_.FullName
@@ -22,7 +22,7 @@ $tests | % {
 }
 
 Write-Host "$("="*10) Checking the Results ".PadRight(80,"=") -ForegroundColor Cyan
-ls $resultsDir -Filter "*.json" | % {
+Get-ChildItem $resultsDir -Filter "*.json" | % {
     Write-Host "Checking '$_'..." -NoNewline -ForegroundColor Cyan
     $rs = $_ | Get-Content | ConvertFrom-Json
     $errorFound = $false
