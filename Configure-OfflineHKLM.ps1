@@ -34,13 +34,13 @@ function Configure-OfflineHKLM {
         shoutOut "Done!" Green
     }
 
-    if ( { reg query "$rootKey\Microsoft\Windows\CurrentVersion\Run" | ? { $_ -match "^\s*CAFAutorunTrigger" } } | Run-Operation |Out-Null) { shoutOut "Deleting old Trigger..." Cyan; { reg delete "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Run-Operation | Out-Null } #DEBUG
+    if ( { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" | ? { $_ -match "^\s*CAFAutorunTrigger" } } | Run-Operation |Out-Null) { shoutOut "Deleting old Trigger..." Cyan; { reg delete "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Run-Operation | Out-Null } #DEBUG
 
     
-    $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\Run" } | Run-Operation
+    $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" } | Run-Operation
     if ( !($r | ? { $_ -match "^\s*CAFAutorunTrigger" }) ) {
         shoutOut "Adding CAF autorun trigger..." Cyan
-        { reg add "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /t REG_SZ /d "start /B Powershell \`"ls C:\CAFAutorun -Filter '*.ps1' | ? { . `$_.FullName  }\`"" } | Run-Operation -OutNull
+        { reg add "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" /v CAFAutorunTrigger /t REG_SZ /d "cmd /C start /B Powershell -WindowStyle Hidden -ExecutionPolicy Bypass -NonInteractive -NoProfile -NoLogo -Command `"ls C:\CAFAutorun -Filter '*.ps1' | ? { . `$_.FullName  }`"" } | Run-Operation -OutNull
     }
 
 

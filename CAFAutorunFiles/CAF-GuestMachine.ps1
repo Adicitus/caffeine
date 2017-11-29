@@ -4,6 +4,8 @@
 
 import-module International
 
+. "$PSScriptRoot\includes\log.ps1"
+
 $logFile = "C:\CAF.log"
 $log = {
     param($msg)
@@ -68,10 +70,8 @@ if ($licenses) {
             . $log "Rearming: $($_.Description) ($($_.LicenseFamily)): $($_.LicenseStatus) ($($_.GracePeriodRemaining) minutes left, $($_.RemainingSkuReArmCount) SKU rearms left)"
                 
             try {
-                if ($_.Licensefamily -match "Office|Eval") {
-                    $_.ReArmSku() *>&1
-                    $rearmPerformed = $true
-                }
+                . $log ($_.ReArmSku() *>&1)
+                $rearmPerformed = $true
                 sleep 10
             } catch {
                 . $log $_
@@ -82,61 +82,6 @@ if ($licenses) {
     . $log "No SoftwareLicenses need to be rearmed."
 }
 
-# Prompt for consent to restart the machine.
-# [MessageBox] is not an option since availability is spotty.
-
-$prompt = {
-    param ($action, $switch)
-    $restartQuery = {
-        Write-Host "Some of the licenses on this machine were about to expire and have been reactivated."
-        Write-Host "The machine needs to be $action in order for these changes to finish."
-        $r = ""
-        while ($r -notmatch '^y|yes|yeah|yep|n|no|nope|nah$') {
-            $r = Read-Host -Prompt 'Would you like to restart now? (Y/N)'
-            if ($r -match '^y|yes|yeah|yep$' ) {
-                shutdown $switch /t 5
-            }
-        }
-    }
-
-    . $restartQuery
-
-}
-
-
-if ($onRearmKey = Get-Item HKLM:\SOFTWARE\CAFSetup\Actions\OnRearm -ea SilentlyContinue) {
-    $onRearmAction = $onRearmKey.GetValue("action")
-} else {
-    $onRearmAction = "alwaysShutdown"
-}
-
-. $log "OnRearm: $onRearmAction"
-
-if ($rearmPerformed -or ($onRearmAction -match "^always")) {
-    switch -Regex ($onRearmAction) {
-        "promptShutdown" {
-            . $log "OnRearm action: prompt for shutdown"
-            . $prompt "Shut down" "/s"
-        }
-        "promptRestart" {
-            . $log "OnRearm action: prompt for restart"
-            . $prompt "restart" "/r"
-        }
-        "Shutdown" {
-            . $log "OnRearm action: shutdown"
-            shutdown /s /t 0
-        }
-        "Restart" {
-            . $log "OnRearm action: Restart"
-            shutdown /r /t 0
-        }
-        default {
-            . $log "Default OnRearm action: shutdown"
-            Shutdown /s /t 0
-        }
-    }
-} else {
-    . $log "No rearm performed and no 'always' action specified."
-}
+Start-Process Powershell -ArgumentList "-Command $PSScriptRoot\includes\RearmRestart.ps1 '$($rearmPerformed.ToString())'" -Wait
 
 . $log "Finished running CAF-Guestmachine."
