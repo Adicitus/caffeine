@@ -278,7 +278,7 @@ function CAF-VHDs {
                     shoutOut "Missing source file: '$_'" Red
                     return
                 }
-                { xcopy "$_" "$VHDMountDir\CAFAutorun\" /S } | Run-Operation | Out-Null
+                { xcopy "$_" "$VHDMountDir\CAFAutorun\" /S /F /I } | Run-Operation | Out-Null
             }
             
             shoutOut "Done!" Green
