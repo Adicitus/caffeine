@@ -38,22 +38,26 @@ $rearmPerformed = $false
 
 . $log "computer: $($Env:COMPUTERNAME)"
 $rearmFiles = ls -Recurse "${env:ProgramFiles(x86)}" -Filter "*ospp.vbs" | % { $_.FullName }
-. $log  ("Office Rearm files (*ospp.vbs) found: $( $rearmFiles -join ", " )")
-$r = $rearmFiles | % {
-    . $log "Checking $_"
-    $r = cscript $_ /dstatus
-    $rf = $r -join "`n"
-    if ($rf -match "REMAINING GRACE: [0-7] days") {
-        . $log (cscript $_ /rearm *>&1)
-        $rearmPerformed = $true
-        . $log "Rearmed."
-    } else {
-        . $log "No need to rearm."
-    }
+if ($rearmfiles) {
+    . $log  ("Office Rearm files (*ospp.vbs) found: $( $rearmFiles -join ", " )")
+    $r = $rearmFiles | % {
+        . $log "Checking $_"
+        $r = cscript $_ /dstatus
+        $rf = $r -join "`n"
+        if ($rf -match "REMAINING GRACE: [0-7] days") {
+            . $log (cscript $_ /rearm *>&1)
+            $rearmPerformed = $true
+            . $log "Rearmed."
+        } else {
+            . $log "No need to rearm."
+        }
 
-} *>&1
+    } *>&1
 
-. $log $r
+    . $log $r
+} else {
+    . $log "No rearm files found."
+}
 
 $licenses = Get-WmiObject SoftwareLicensingProduct | ? {
     $_.LicenseStatus -ne 1
@@ -82,6 +86,18 @@ if ($licenses) {
     . $log "No SoftwareLicenses need to be rearmed."
 }
 
-Start-Process Powershell -ArgumentList "-Command $PSScriptRoot\includes\RearmRestart.ps1 '$($rearmPerformed.ToString())'" -Wait
+if ($onRearmKey = Get-Item HKLM:\SOFTWARE\CAFSetup\Actions\OnRearm -ea SilentlyContinue) {
+    $onRearmAction = $onRearmKey.GetValue("action")
+} else {
+    $onRearmAction = "alwaysShutdown"
+}
+
+. $log "OnRearm: $onRearmAction"
+
+if ($rearmPerformed -or ($onRearmAction -match "^always")) {
+    Start-Process Powershell -ArgumentList "-Command $PSScriptRoot\includes\RearmRestart.ps1 $onRearmAction" -Wait
+} else {
+    . $log "No rearm performed and no 'always' action specified."
+}
 
 . $log "Finished running CAF-Guestmachine."

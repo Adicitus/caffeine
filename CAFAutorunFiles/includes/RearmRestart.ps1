@@ -1,6 +1,4 @@
-﻿param($v)
-
-$rearmPerformed = $v -eq "True"
+﻿param($onRearmAction)
 
 . "$PSScriptRoot\log.ps1"
 
@@ -26,44 +24,30 @@ $prompt = {
 
 }
 
-
-if ($onRearmKey = Get-Item HKLM:\SOFTWARE\CAFSetup\Actions\OnRearm -ea SilentlyContinue) {
-    $onRearmAction = $onRearmKey.GetValue("action")
-} else {
-    $onRearmAction = "alwaysShutdown"
-}
-
-
-. $log "OnRearm: $onRearmAction"
-
-if ($rearmPerformed -or ($onRearmAction -match "^always")) {
-    switch -Regex ($onRearmAction) {
-        "promptShutdown" {
-            . $log "OnRearm action: prompt for shutdown"
-            . $prompt "Shut down" "/s"
-            break
-        }
-        "promptRestart" {
-            . $log "OnRearm action: prompt for restart"
-            . $prompt "restart" "/r"
-            break
-        }
-        "Shutdown" {
-            . $log "OnRearm action: shutdown"
-            shutdown /s /t 0
-            break
-        }
-        "Restart" {
-            . $log "OnRearm action: Restart"
-            shutdown /r /t 0
-            break
-        }
-        default {
-            . $log "Default OnRearm action: shutdown"
-            Shutdown /s /t 0
-            break
-        }
+switch -Regex ($onRearmAction) {
+    "promptShutdown" {
+        . $log "OnRearm action: prompt for shutdown"
+        . $prompt "Shut down" "/s"
+        break
     }
-} else {
-    . $log "No rearm performed and no 'always' action specified."
+    "promptRestart" {
+        . $log "OnRearm action: prompt for restart"
+        . $prompt "restart" "/r"
+        break
+    }
+    "Shutdown" {
+        . $log "OnRearm action: shutdown"
+        shutdown /s /t 0
+        break
+    }
+    "Restart" {
+        . $log "OnRearm action: Restart"
+        shutdown /r /t 0
+        break
+    }
+    default {
+        . $log "Default OnRearm action: shutdown"
+        Shutdown /s /t 0
+        break
+    }
 }
