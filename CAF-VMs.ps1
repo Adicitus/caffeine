@@ -19,7 +19,7 @@ function CAF-VMs {
     Rebase-VHDFiles $VMFolders
 
     shoutOut "Inventorying VHDs..." Cyan
-    $autorunFiles = @( "$PSScriptRoot\CAFAutorunFiles\" )
+    $autorunFiles = @( (ls "$PSScriptRoot\CAFAutorunFiles\*" | % { $_.FullName }) )
     $VHDRecords = CAF-VHDs $VMFolders -Configuration $Configuration -AutorunFiles $autorunFiles
 
     shoutOut "Creating VHD lookup table..." Cyan
