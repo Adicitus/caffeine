@@ -41,6 +41,7 @@ function Configure-OfflineHKLM {
     if ( !($r | ? { $_ -match "^\s*CAFAutorunTrigger" }) ) {
         shoutOut "Adding CAF autorun trigger..." Cyan
         { reg add "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -WindowStyle Hidden -ExecutionPolicy Bypass -NonInteractive -NoProfile -NoLogo -Command ls C:\CAFAutorun -Filter '*.ps1' | ? { . `$_.FullName  }" } | Run-Operation -OutNull
+
     }
 
 
