@@ -285,7 +285,7 @@ function CAF-VHDs {
 
             if ($vhdConfig = $Configuration[$record.FileItem.Name]) {
 
-                if ($caffeineDir = $vhdConfig.CaffeineInstallDir) {
+                if ($caffeineDir = $vhdConfig.InstallCaffeineTo) {
                     shoutOut "Installing Caffeine at '$caffeineDir'..."
                     cp $PSScriptRoot "$VHDMountDir\$caffeineDir" -Recurse
                     $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
@@ -300,7 +300,26 @@ function CAF-VHDs {
                         shoutOut "Unable to find the desired job file!" Red
                     }
                 }
+                if (($alu = $vhdConfig.AutoLoginUser) -and ($alp = $vhdConfig.AutoLoginPassword)) {
+                    if ( !($ald = $vhdConfig.AutoLoginDomain ) ) {
+                        $ald = $null
+                    }
 
+                    $rmp = "HKLM\OFFLINE-SOFTWARE"
+                    Run-Operation { reg load $rmp "$VHDMountDir\Windows\System32\Config\SOFTWARE" }
+
+                    $winlogon = "$rmp\Microsoft\Windows NT\CurrentVersion\winlogon"
+                    Run-Operation { reg add $winlogon /v AutoAdminLogon /t REG_SZ /d 1 /f }
+                    Run-Operation { reg add $winlogon /v AutoLogonCount /t REG_DWORD /d 9999 /f }
+                    Run-Operation { reg add $winlogon /v DefaultPassword /t REG_SZ /d 1 /f }
+                    Run-Operation { reg add $winlogon /v DefaultUserName /t REG_SZ /d $alu /f }
+                    if ( $ald -ne $null) {
+                        Run-Operation { reg add $winlogon /v DefaultDomainName /t REG_SZ /d $ald /f }
+                    }
+                    Run-Operation { reg add $winlogon /v DefaultPassword /t REG_SZ /d $alp /f }
+
+                    Run-Operation { reg unload $rmp }
+                }
             }
 
             $localeNameRegex = "[a-z]{2}-[a-z]{2}"
