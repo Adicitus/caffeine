@@ -21,6 +21,8 @@ function PassiveRearm-VM {
 
     $offlineSoftwareMP = "HKLM\OFFLINE-SOFTWARE"
     $vhdCooldownTimeout = 5000
+    $rearmTimeout1 = 180000
+    $rearmTimeout2 = 240000
 
     $vhds = $vm | Get-VMHardDiskDrive
 
@@ -90,8 +92,6 @@ function PassiveRearm-VM {
     }
 
     # Start the VM to let CAF-GuestMachine run.
-    $rearmTimeout1 = 120000
-    $rearmTimeout2 = 180000
     $rearmStart = Get-Date
     
     shoutOut "Starting VM..."
