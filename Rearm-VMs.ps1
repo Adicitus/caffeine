@@ -51,12 +51,17 @@ function Rearm-VMs {
         return $c
     }
 
+    ShoutOut "Using the following credentials: " Cyan
+    $credentials | ? { $_.Credential } |  % {
+        ShoutOut ("'{0}\{1}': {2}" -f $_.Domain, $_.Username, $_.Password)
+    }
+
     $preRearmOps = @()
     $postRearmOps = @()
 
     if ($RearmVMsConfig = $Configuration["Rearm-VMs"]) {
-        if ( ($p = $RearmVMsConfig["PreRearm"]) -and ($p -is [array]) ) { $preRearmOps = $p }
-        if ( ($p = $RearmVMsConfig["PostRearm"]) -and ($p -is [array]) ) { $postRearmOps = $p } 
+        if ( ($p = $RearmVMsConfig["PreRearm"]) ) { $preRearmOps = $p }
+        if ( ($p = $RearmVMsConfig["PostRearm"]) ) { $postRearmOps = $p } 
     }
 
     $MaintenanceSwitchName = "Maintenance"
