@@ -28,12 +28,8 @@ param(
     [Switch]$SkipVMRearm
 )
 
-. "$PSScriptRoot\Common\ShoutOut.ps1"
-. "$PSScriptRoot\Common\Run-Operation.ps1"
-. "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
-. "$PSScriptRoot\Common\Query-RegValue.ps1"
-. "$PSScriptRoot\Common\Set-RegValue.ps1"
-. "$PSScriptRoot\Common\Install-Feature.ps1"
+Import-Module "$PSScriptroot\Common\ACGCore.psm1"
+
 . "$PSScriptRoot\Install-CAFRegistry.ps1"
 . "$PSScriptRoot\Peel-PodFile.ps1"
 . "$PSScriptRoot\Verify-Assertions.ps1"
