@@ -8,7 +8,7 @@ function Rearm-VMs {
         [parameter(position=2)]$Configuration = @{ }
     )
 
-    shoutOut "Selecting Credentials... "
+    shoutOut "Selecting Credentials... " Cyan
     $credentialEntries = if ($credentialKeys = $Configuration.Keys -match "^Credential") {
         $credentialKeys | % { $Configuration[$_] }
     } else {
@@ -46,14 +46,14 @@ function Rearm-VMs {
         }
 
         $domain = if ($_.Domain) { $_.Domain } else { "." }
-        $c = New-PSCredential ("{0}\{1}" -f $_.Domain,$_.UserName) $_.Password
+        $c = New-PSCredential ("{0}\{1}" -f $Domain,$_.UserName) $_.Password
         $_.Credential = $c
         return $c
     }
 
     ShoutOut "Using the following credentials: " Cyan
-    $credentials | ? { $_.Credential } |  % {
-        ShoutOut ("'{0}\{1}': {2}" -f $_.Domain, $_.Username, $_.Password)
+    $Credentials | % {
+        ShoutOut ("{0}" -f $_.UserName)
     }
 
     $preRearmOps = @()
