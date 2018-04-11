@@ -38,12 +38,12 @@ function CAF-VMs {
     shoutOut "Done!" Green
     shoutOut "Collected $($vmfiles.Count) VM files..." Cyan
 
-    if ($Configuration.HyperVStep.ImportExclusionPath -or $Configuration.HyperVStepFilter.Exclude) {
+    if ($Configuration["CAF-VMs"].NoImport) {
         shoutOut "Checking against exclusion paths..."
-        $exclusionList = @($Configuration.HyperVStep.ImportExclusionPath) + @($Configuration.HyperVStepFilter.Exclude)
+        $exclusionList = @($Configuration["CAF-VMs"].NoImport)
         $vmfiles = $vmfiles | ? { $f = $_.FullName; !( $exclusionList | ? { $f -like "$_*" }  ) }
         shoutOut " Done!" Green
-        shoutOut "kept $($vmfiles.Count) VM files..." Cyan
+        shoutOut "Kept $($vmfiles.Count) VM files..." Cyan
     }
 
     shoutOut "Checking for incompatibilities..." Cyan
