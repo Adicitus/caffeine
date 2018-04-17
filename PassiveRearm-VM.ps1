@@ -5,7 +5,6 @@
 . "$PSScriptRoot\Common\ShoutOut.ps1"
 
 # ! NOTE: This function needs to be carefully maintained, it should only return $true or $false. ! #
-# ! WARNING: This function does not seem to perform as expected and may corrupt the registries of the VMs being rearmed ! #
 function PassiveRearm-VM {
     param(
         $vm,
@@ -13,16 +12,16 @@ function PassiveRearm-VM {
             Domain="Adatum"
             Username="Administrator"
             Password='Pa55w.rd'
-        }
+        },
+        $VhdCooldownTimeout = 5000,
+        $RearmTimeout1 = 180000,
+        $RearmTimeout2 = 240000
     )
 
     shoutOut ("Attempting Passive Rearm: $($vm.VMName) ".PadRight(80,'=')) Magenta
     shoutOut ("Credentials: {0}\{1}, {2}" -f $credentialEntry.Domain,$credentialEntry.Username,$credentialEntry.Password)
 
     $offlineSoftwareMP = "HKLM\OFFLINE-SOFTWARE"
-    $vhdCooldownTimeout = 5000
-    $rearmTimeout1 = 180000
-    $rearmTimeout2 = 240000
 
     $vhds = $vm | Get-VMHardDiskDrive
 
