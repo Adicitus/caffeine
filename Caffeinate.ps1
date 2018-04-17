@@ -25,17 +25,42 @@ VMs need to be rearmed.
 #>
 param(
     $JobFile = $null,
+    $ACGCoreDir="$PSScriptroot\Common",
+    $LogFile = "C:\CAFination.log",
     [Switch]$SkipVMRearm
 )
 
-Import-Module "$PSScriptroot\Common\ACGCore.psm1"
+# =========================================================================== #
+# ==================== Start: Bootstrapping the script ====================== #
+# =========================================================================== #
+
+$bootstrapLog = "{0}\bootstrap.{1:yyyyMMddhhmmss}.log" -f $PSScriptRoot,[datetime]::Now
+"Starting Caffeination.ps1..." >> $bootstrapLog
+"Starting Caffeine bootstrap..." >> $bootstrapLog
+
+if (-not (Get-Module "ACGCore" -ListAvailable -ea SilentlyContinue)) {
+    "ACGCore module not available, copying ACGCore files to PSModulePath..." >> $bootstrapLog
+    Copy-Item $ACGCoreDir "C:\Program Files\WindowsPowerShell\Modules\ACGCore" -Recurse *>&1 >> $bootstrapLog
+}
+
+"Importing ACGCore..." >> $bootstrapLog
+Import-Module ACGCore  *>&1 >> $bootstrapLog
+
+if (-not (Get-Command ShoutOut -ea SilentlyContinue)) {
+    "Unable to find the 'shoutOut' command! Quitting!" >> $bootstrapLog
+    return
+} else {
+    "'ShoutOut' is available, starting logging to '$LogFile'..." >> $bootstrapLog
+}
+
+"Caffeine bootstrap finished." >> $bootstrapLog
 
 . "$PSScriptRoot\Install-CAFRegistry.ps1"
 . "$PSScriptRoot\Peel-PodFile.ps1"
 . "$PSScriptRoot\Verify-Assertions.ps1"
 . "$PSScriptRoot\Run-CAFSetup.ps1"
 
-$script:_ShoutOutSettings.LogFile = "C:\CAFination.log"
+$script:_ShoutOutSettings.LogFile = $LogFile
 
 shoutOut "Starting caffeination..."
 
@@ -272,6 +297,24 @@ So this function won't be used outside of caffeinate.ps1 for the forseeable futu
 function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
     
+    function GetNextOperationNumber() {
+        return Query-RegValue $registryKey $registryValue 
+    }
+
+    function RestartAndRepeat {
+        param(
+            [switch]$NoRestart
+        )
+        $n = GetNextOperationNumber
+        shoutOut "Setting operation number to '$n'..."
+        Set-RegValue $registryKey $registryValue ($n-1)
+        if (!$NoRestart) {
+            shoutOut "Restarting computer..."
+            { shutdown /r /t 0 } | Run-Operation -OutNull
+            pause
+        }
+    }
+
     $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
     Set-Regvalue $registryKey $registryValue ($OperationN+1) # Increment the pointer.
     while ( $Operations -and ($o = @($Operations)[$OperationN]) ) {
