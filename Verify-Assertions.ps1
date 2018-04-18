@@ -1,4 +1,28 @@
+<#
+.SYNOPSIS
+Verifies a set of assertions provided in the configuration object.
 
+.DESCRIPTION
+Verifies a set of assertions provided in the configuration object. Assertions are sections
+who's name starts with "Assert", containing "Test" declarations:
+
+[Assert[(Exception|True|False)][:]<Assertion name>]
+Test=<Command to run>
+
+While the section title must start with "Assert", writing "AssertException", "AssertTrue" or
+"AssertFalse" will change the type of assertion type:
+
+Assert: Fails if any of the tests result in an Exception or ErrorRecord.
+AssertException: Passes if all of the tests result in an Exception or ErrorRecord.
+AssertTrue: Passes if and only if all test results evaluate to $true.
+AssertFalse: Passes if and only if all test results evaluate to $false.
+
+DEPRECATED: The assert type can be overriden using a "Type" declaration (Type=<Type of assert>).
+
+To provide a bit more information about an assertion a "Description" declaration
+can be used (Description=<description of the assertion>).
+
+#>
 function Verify-Assertions{
     param(
         [hashtable]$conf,
@@ -58,34 +82,38 @@ function Verify-Assertions{
         shoutOut ("Checking '{0}' ({1}, {2} lines)..." -f $_.Name, $_.Type, @($_.Test).length) -NoNewLine
 
         $assert = $_
-        $rs = @()
+        $rs = [System.Collections.ArrayList]::new()
 
         $OldErrorActionPreference = $ErrorActionPreference
         $ErrorActionPreference = "Stop"
 
         $_.Test | % {
-            $rs += try {
-                Invoke-Expression $_
+            $t = $_
+            $r = try {
+                Invoke-Expression $t
             } catch {
                 $_
             }
+            $rs.Add(@($t, $r))
         }
 
         $ErrorActionPreference = $OldErrorActionPreference
 
+        $failedTests = @()
         $p = $true
-        if ($rs -is [array]) {
-            if ($rs.length -eq 0) {
-                $p = $false
-            } else {
-                $rs |% { if ( !(. $assertTypes[$assert.Type].Check $_) ) { $p = $false } }
-            }
+        if ($rs.length -eq 0) {
+            $p = $false
         } else {
-            if ( !(. $assertTypes[$assert.Type].Check $rs) ) { $p = $false }
+            $rs | % {
+                if ( !(. $assertTypes[$assert.Type].Check $_[1]) ) {
+                    $p = $false
+                    $failedTests += $_[0]
+                }
+            }
         }
         $msg = if($p) { "Passed!" } else { "Failed!" }
         shoutOut $msg
-        $result += @{ Name=$_.Name; Type=$_.Type; Description=$_.Description; Passed=$p }
+        $result += @{ Name=$_.Name; Type=$_.Type; Description=$_.Description; Passed=$p; FailedTests=$failedTests }
     }
     
     shoutOut "Outputting results to '$logFile'..."
