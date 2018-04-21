@@ -82,7 +82,7 @@ function Verify-Assertions{
         shoutOut ("Checking '{0}' ({1}, {2} lines)..." -f $_.Name, $_.Type, @($_.Test).length) -NoNewLine
 
         $assert = $_
-        $rs = [System.Collections.ArrayList]::new()
+        $rs = New-Object System.Collections.ArrayList
 
         $OldErrorActionPreference = $ErrorActionPreference
         $ErrorActionPreference = "Stop"
