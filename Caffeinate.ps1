@@ -384,7 +384,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
                             shoutOut $cred
                             # Just in case we find more than one session ID for a user:
                             foreach ($sessionID in @($sessionIDs)) {
-                                $r = & "$ACGCoreDir\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -accepteula powershell -WindowStyle Max -Command . $PSCommandPath *>&1
+                                $r = & "$ACGCoreDir\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $PSCommandPath *>&1
                                 shoutOut "Result:" Cyan
                                 shoutOut "'$r'"
 
