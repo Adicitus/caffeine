@@ -17,21 +17,25 @@ function Rearm-VMs {
                 Domain="."
                 Username="Administrator"
                 Password='Pa$$w0rd'
+                VMs=".*"
             }
             @{
                 Domain="."
                 Username="Admin"
                 Password='Pa$$w0rd'
+                VMs=".*"
             }
             @{
                 Domain="."
                 Username="Administrator"
                 Password='Pa55w.rd'
+                VMs=".*"
             }
             @{
                 Domain="."
                 Username="Admin"
                 Password='Pa55w.rd'
+                VMs=".*"
             }
         )
     }
@@ -39,10 +43,6 @@ function Rearm-VMs {
     $Credentials = $credentialEntries | % {
         if (!$_.Username -or !$_.Password) {
             return
-        }
-
-        if (!$_.VMs) {
-            $_.VMs = "" # The empty string matches all strings.
         }
 
         $domain = if ($_.Domain) { $_.Domain } else { "." }
