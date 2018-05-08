@@ -67,6 +67,10 @@ if (-not (Get-Command ShoutOut -ea SilentlyContinue)) {
 
 "Caffeine bootstrap finished." >> $bootstrapLog
 
+# =========================================================================== #
+# ======================== Start: Main script body ========================== #
+# =========================================================================== #
+
 . "$PSScriptRoot\Install-CAFRegistry.ps1"
 . "$PSScriptRoot\Peel-PodFile.ps1"
 . "$PSScriptRoot\Verify-Assertions.ps1"
@@ -162,7 +166,7 @@ $installSteps[1] = @{
     Block = {
         $conf.Features.Keys | % {
             ShoutOut " |-> '$_'" White
-            Install-Feature $_
+            { Install-Feature $_ } | Run-Operation
         }
         Set-RegValue $registryKey "InstallStep" 2 REG_DWORD
     }
