@@ -9,10 +9,14 @@ function Rearm-VMs {
     )
 
     shoutOut "Selecting Credentials... " Cyan
-    $credentialEntries = if ($credentialKeys = $Configuration.Keys -match "^Credential") {
-        $credentialKeys | % { $Configuration[$_] }
-    } else {
-        @(
+    $credentialEntries = $Configuration.Keys -match "^Credential" | ? {
+        $entry = $Configuration[$_]
+        return $entry -is [hashtable] -and $entry.ContainsKey("VMs")
+    } | % { $Configuration[$_] }
+
+    if (-not $credentialEntries) {
+        shoutOut "No VM credentials found, using defaults."
+        $credentialEntries = @(
             @{
                 Domain="."
                 Username="Administrator"
@@ -40,6 +44,9 @@ function Rearm-VMs {
         )
     }
 
+    shoutOut "Using these credentials..." Cyan
+    shoutOut ($credentialEntries | ConvertTo-Json -Depth 2)
+
     $Credentials = $credentialEntries | % {
         if (!$_.Username -or !$_.Password) {
             return
@@ -49,11 +56,6 @@ function Rearm-VMs {
         $c = New-PSCredential ("{0}\{1}" -f $Domain,$_.UserName) $_.Password
         $_.Credential = $c
         return $c
-    }
-
-    ShoutOut "Using the following credentials: " Cyan
-    $Credentials | % {
-        ShoutOut ("{0}" -f $_.UserName)
     }
 
     $preRearmOps = @()
