@@ -356,7 +356,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
 
                 shoutOut "Looking for logged on users..." Cyan
                 do {
-                    $interactiveSessions = gwmi -query "Select __PATH From Win32_LogonSession WHERE LogonType=2"
+                    $interactiveSessions = gwmi -query "Select __PATH From Win32_LogonSession WHERE LogonType=2 OR LogonType=10 OR LogonType=11 OR LogonType=12 OR LogonType=13"
                     $users = $interactiveSessions | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} WHERE ResultClass=Win32_UserAccount" }
                     # We're only interested in users whose credential are available.
                     $users = $users | ? {
@@ -378,7 +378,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
 
 
                 foreach ( $u in @($users)) {
-                    $ss = gwmi -query "ASSOCIATORS OF {$($u.__PATH)} Where ResultClass=Win32_LogonSession" | ? { $_.LogonType -eq 2 }
+                    $ss = gwmi -query "ASSOCIATORS OF {$($u.__PATH)} Where ResultClass=Win32_LogonSession" | ? { $_.LogonType -in 2,10,11,12,13 }
                     $ps = $ss | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} where ResultClass=Win32_Process" }
                     $sessionIDs = $ps | % { $_.SessionID } | sort -Unique
 
