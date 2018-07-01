@@ -74,7 +74,8 @@ function Install-CAFRegistry {
 
         $ta = New-ScheduledTaskAction -Execute "cmd" -Argument "/C start `"CAF Autorun`" /MAX Powershell `"Get-Date > C:\autorundump; (reg query '$registryKey' /v AutorunBootstrap) | ? { `$_ -match 'REG_[A-Z]+\s+(?<s>.*)$' } | % { iex `$matches.s *>> C:\autorundump }`""
         $tt = New-ScheduledTaskTrigger -AtStartup
-        $t = New-ScheduledTask -Action $ta -Trigger $tt -Settings (New-ScheduledTaskSettingsSet)
+        $ts = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries
+        $t = New-ScheduledTask -Action $ta -Trigger $tt -Settings $ts
         $r = $t | Register-ScheduledTask -User $tUsername -Password $tPassword -TaskName "CAFAutorun"
         shoutOut "Done! ($($r.State))" Green
     }
