@@ -61,7 +61,7 @@ function Install-CAFRegistry {
 
         shoutOut "Adding autorun trigger... " Cyan -NoNewline
         
-        $tUsername = "Administrator"
+        $tUsername = "$env:COMPUTERNAME\MDTUser"
         $tPassword = 'Pa$$w0rd'
 
         if (($iCred = $conf.CaffeineCredential) -and ($iCred.Username -and $iCred.Password)) {
