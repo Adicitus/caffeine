@@ -73,12 +73,18 @@ function Install-CAFRegistry {
         }
 
         $jobCredential = New-PSCredential $jUsername $jPassword
-        $jobTrigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay ([timespan]::new(0,0,5))
+        $jobTrigger = New-JobTrigger -AtStartup -RandomDelay ([timespan]::new(0,0,5))
         $jobOptions = New-ScheduledJobOption -RunElevated -ContinueIfGoingOnBattery -MultipleInstancePolicy IgnoreNew
         $jobAction  = {
-            $dumpFile = "C:\Caffeine.autorundump"
-            Get-Date > $dumpFile
-            $bootstrapScript = (reg query $registryKey /v AutorunBootstrap) | Where-Object {
+            param(
+                $r
+            )
+            $dumpFile = "C:\caffeinate.autorun.log"
+            "{0:yyyy/MM/dd - HH:mm:ss}" -f (Get-Date) > $dumpFile
+            "Using the following key: '{0}'" -f $r >> $dumpFile
+            "Key content: " >> $dumpFile
+            reg query $r >> $dumpFile
+            $bootstrapScript = (reg query $r /v AutorunBootstrap) | Where-Object {
                 $_ -match 'REG_[A-Z]+\s+(?<s>.*)$'
             } | ForEach-Object {
                 $matches.s
@@ -99,6 +105,7 @@ function Install-CAFRegistry {
             ScheduledJobOption = $jobOptions
             ScriptBlock = $jobAction
             Credential = $jobCredential
+            ArgumentList = $registryKey
         }
 
         shoutOut "Using the following job parameters: "
