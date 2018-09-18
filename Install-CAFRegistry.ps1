@@ -61,22 +61,53 @@ function Install-CAFRegistry {
 
         shoutOut "Adding autorun trigger... " Cyan -NoNewline
         
-        $tUsername = "$env:COMPUTERNAME\MDTUser"
-        $tPassword = 'Pa$$w0rd'
+        $jUsername = "$env:COMPUTERNAME\MDTUser"
+        $jPassword = 'Pa$$w0rd'
 
         if (($iCred = $conf.CaffeineCredential) -and ($iCred.Username -and $iCred.Password)) {
-            $tPassword = $iCred.Password
-            $tUsername = $iCred.Username
+            $jPassword = $iCred.Password
+            $jUsername = $iCred.Username
             if ($iCred.Domain){
-                $tUsername = "{0}\{1}" -f $iCred.Domain,$tUsername
+                $jUsername = "{0}\{1}" -f $iCred.Domain,$jUsername
             }
         }
 
-        $ta = New-ScheduledTaskAction -Execute "cmd" -Argument "/C start `"CAF Autorun`" /MAX Powershell `"Get-Date > C:\autorundump; (reg query '$registryKey' /v AutorunBootstrap) | ? { `$_ -match 'REG_[A-Z]+\s+(?<s>.*)$' } | % { iex `$matches.s *>> C:\autorundump }`""
-        $tt = New-ScheduledTaskTrigger -AtStartup
-        $ts = New-ScheduledTaskSettingsSet -StartWhenAvailable -DontStopIfGoingOnBatteries
-        $t = New-ScheduledTask -Action $ta -Trigger $tt -Settings $ts
-        $r = $t | Register-ScheduledTask -User $tUsername -Password $tPassword -TaskName "CAFAutorun"
-        shoutOut "Done! ($($r.State))" Green
+        $jobCredential = New-PSCredential $jUsername $jPassword
+        $jobTrigger = New-ScheduledTaskTrigger -AtStartup -RandomDelay ([timespan]::new(0,0,5))
+        $jobOptions = New-ScheduledJobOption -RunElevated -ContinueIfGoingOnBattery -MultipleInstancePolicy IgnoreNew
+        $jobAction  = {
+            $dumpFile = "C:\Caffeine.autorundump"
+            Get-Date > $dumpFile
+            $bootstrapScript = (reg query $registryKey /v AutorunBootstrap) | Where-Object {
+                $_ -match 'REG_[A-Z]+\s+(?<s>.*)$'
+            } | ForEach-Object {
+                $matches.s
+            }
+
+            "Bootstrap script to run:" >> $dumpFile
+            $bootstrapScript >> $dumpFile
+
+            $bootstrapScript | % {
+                "$_`: ".PadRight(80, "=")
+                Invoke-Expression $_ *>> $dumpFile
+            }
+        }
+
+        $jobParams = @{
+            Name = "CAFAutorun"
+            Trigger = $jobTrigger
+            ScheduledJobOption = $jobOptions
+            ScriptBlock = $jobAction
+            Credential = $jobCredential
+        }
+
+        shoutOut "Using the following job parameters: "
+        $jobParams | shoutOut 
+
+        $jobDef = Register-ScheduledJob @jobParams
+        shoutOut "Job definition generated:"
+        $jobDef | shoutOut
+
+        shoutOut "Caffeine Install Done!" Green
     }
 }
