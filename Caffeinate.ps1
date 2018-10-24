@@ -332,6 +332,12 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
     }
 
     $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
+
+    if ($OperationN -eq $null) {
+        $OperationN = 0
+        Set-Regvalue $registryKey $registryValue $OperationN
+    }
+
     Set-Regvalue $registryKey $registryValue ($OperationN+1) # Increment the pointer.
     while ( $Operations -and ($o = @($Operations)[$OperationN]) ) {
         shoutOut "Operation #$OperationN... " cyan
@@ -428,16 +434,25 @@ while ($step = $installSteps[$stepN]){
     ShoutOut "Installation step: $stepN ($($step.Name))" cyan
     ShoutOut ("=" * 80) cyan
     
-    shoutOut "Running operations..." Cyan
-    $operations = $conf[$step.Name].Operation
+    shoutOut "Running PRE operations..." Cyan
+    $operations = "Operation", "Pre" | % { $conf[$step.Name].$_ }
     runOperations $registryKey "NextOperation" $operations $conf
 
-    shoutOut "Executing step block: $($step.caption)" magenta
-    $Stop = . $step.block
-    shoutOut "Step Block done!" Magenta
+    $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
+    if (-not $blockIsFinished) {
+        shoutOut "Executing step block: $($step.caption)" magenta
+        $Stop = . $step.block
+        shoutOut "Step Block done!" Magenta
+        Set-Regvalue $registryKey "BlockIsFinished" 1
+    }
 
+    shoutOut "Running POST operations..." Cyan
+    $operations = $conf[$step.Name].Post
+    runOperations $registryKey "NextPostOperation" $operations $conf
 
-    Set-Regvalue $registryKey "NextOperation" 0 
+    Set-Regvalue $registryKey "NextOperation" 0
+    Set-Regvalue $registryKey "NextPostOperation" 0
+    Set-Regvalue $registryKey "BlockIsFinished" 0
     $stepN = Query-RegValue  $registryKey "InstallStep"
     if ($Stop -is [bool] -and $Stop) {
         break;
