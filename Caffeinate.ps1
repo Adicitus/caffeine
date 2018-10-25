@@ -293,6 +293,10 @@ An array of operations to be executed, these can be either string expressions or
 .PARAMETER Conf
 The configuration object, passed in to make it accessible to operations that might need it.
 
+.PARAMETER Vars
+Object passed in to record variables between calls to RunOperations. Must be retained and provided
+by the caller.
+
 .NOTES
 This function is intended to allow the inclusion of more operation-like
 declarations in job files, like: "Pre" as an alias and new name for "Operation"
@@ -310,7 +314,7 @@ time the script is run (for example by prepopulating the $conf variable with dyn
 
 So this function won't be used outside of caffeinate.ps1 for the forseeable future.
 #>
-function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf) {
+function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
     
     function GetNextOperationNumber() {
@@ -424,10 +428,12 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
     }
 }
 
+$OperationVars = @{}
+
 shoutOut "Running pre-setup operations..." Cyan
 $operations = $conf["Global"].Pre
 Set-Regvalue $registryKey "NextOperation.Global" 0
-runOperations $registryKey "NextOperation.Global" $operations $conf
+runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars
 
 shoutOut "Starting setup-sequence..." magenta
 while ($step = $installSteps[$stepN]){
@@ -436,7 +442,7 @@ while ($step = $installSteps[$stepN]){
     
     shoutOut "Running PRE operations..." Cyan
     $operations = "Operation", "Pre" | % { $conf[$step.Name].$_ }
-    runOperations $registryKey "NextOperation" $operations $conf
+    runOperations $registryKey "NextOperation" $operations $conf $OperationVars
 
     $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
     if (-not $blockIsFinished) {
@@ -448,7 +454,7 @@ while ($step = $installSteps[$stepN]){
 
     shoutOut "Running POST operations..." Cyan
     $operations = $conf[$step.Name].Post
-    runOperations $registryKey "NextPostOperation" $operations $conf
+    runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
 
     Set-Regvalue $registryKey "NextOperation" 0
     Set-Regvalue $registryKey "NextPostOperation" 0
@@ -463,7 +469,7 @@ shoutOut "Setup-sequence ended." magenta
 shoutOut "Running post-setup operations..." Cyan
 $operations = $conf["Global"].Post
 Set-Regvalue $registryKey "NextOperation.Global" 0
-runOperations $registryKey "NextOperation.Global" $operations $conf
+runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars
 
 shoutOut "Caffeination done!" Green
 
