@@ -331,7 +331,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         if (!$NoRestart) {
             shoutOut "Restarting computer..."
             { shutdown /r /t 0 } | Run-Operation -OutNull
-            pause
+            exit
         }
     }
 
