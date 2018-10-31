@@ -73,7 +73,7 @@ function Install-CAFRegistry {
         }
 
         $jobCredential = New-PSCredential $jUsername $jPassword
-        $jobTrigger = New-JobTrigger -AtStartup -RandomDelay ([timespan]::new(0,0,5))
+        $jobTrigger = New-JobTrigger -AtStartup -RandomDelay (New-Object timespan (0,0,5))
         $jobOptions = New-ScheduledJobOption -RunElevated -ContinueIfGoingOnBattery -MultipleInstancePolicy IgnoreNew
         $jobAction  = {
             param(
