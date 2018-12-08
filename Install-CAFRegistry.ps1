@@ -114,7 +114,7 @@ function Install-CAFRegistry {
         $jobDef = { Register-ScheduledJob @jobParams } | Run-Operation
         if ($jobDef -is [System.Management.Automation.ErrorRecord]) {
             "Failed to generate scheduled job! Falling back on the 'Run' key..."
-            { reg add HKLM\SOFWARE\Microsoft\Windows\Currentversion\Run /v CaffeineAutorun /t REG_SZ /d "Powershell -File $PSScriptRoot\caffeinate.ps1" /f } | Run-Operation | Out-Null
+            { reg add HKLM\SOFTWARE\Microsoft\Windows\Currentversion\Run /v CaffeineAutorun /t REG_SZ /d "Powershell -File $PSScriptRoot\caffeinate.ps1" /f } | Run-Operation | Out-Null
         } else {
             shoutOut "Job definition generated:"
             $jobDef | shoutOut
