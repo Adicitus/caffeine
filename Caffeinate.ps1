@@ -156,8 +156,6 @@ $installSteps[0] = @{
         if (!$r -or $r -is [System.Management.Automation.ErrorRecord]) {
             shoutOut "There seems to be no active network adapters on this system!" Yellow
         }
-
-        Set-RegValue $registryKey "InstallStep" 1 REG_DWORD
     }
 }
 $installSteps[1] = @{
@@ -168,7 +166,6 @@ $installSteps[1] = @{
             ShoutOut " |-> '$_'" White
             { Install-Feature $_ } | Run-Operation
         }
-        Set-RegValue $registryKey "InstallStep" 2 REG_DWORD
     }
 }
 $installSteps[2] = @{
@@ -182,8 +179,6 @@ $installSteps[2] = @{
         }
 
         $loadHiveConfigs | Run-Operation # All pods have been peeled, ready to look for hives!
-
-        Set-RegValue $registryKey "InstallStep" 3 REG_DWORD
     }
 }
 $installSteps[3] = @{
@@ -198,7 +193,6 @@ $installSteps[3] = @{
         } else {
             shoutOut "Hyper-V is not installed, skipping..."
         }
-        Set-RegValue $registryKey "InstallStep" 4 REG_DWORD
     }
 }
 # Mostly here to run operations when HyperVStep is done.
@@ -208,7 +202,7 @@ $installSteps[4] = @{
     Name="FinalizeStep"
     Caption="Finalizing setup..."
     Block = {
-        Set-RegValue $registryKey "InstallStep" 5 REG_DWORD
+        
     }
 }
 $installSteps[5] = @{
@@ -231,7 +225,6 @@ $installSteps[5] = @{
                 $conf.Taskbar.Unpin | ? { $_ -is [string] } | % { shoutOUt "Unpinning '$_'"; $_ } | % { Pin-App $_ -Unpin }
             }
         }
-        Set-RegValue $registryKey "InstallStep" 6 REG_DWORD
     }
 }
 $installSteps[6] = @{
@@ -239,7 +232,6 @@ $installSteps[6] = @{
     Caption="Checking if all assertions about the current setup are satisfied..."
     Block={
         Verify-Assertions $conf
-        Set-RegValue $registryKey "InstallStep" 7 REG_DWORD
     }
 }
 $installSteps[7] = @{ # This step will be repeated everytime the script is run.
@@ -459,10 +451,11 @@ while ($step = $installSteps[$stepN]){
     Set-Regvalue $registryKey "NextOperation" 0
     Set-Regvalue $registryKey "NextPostOperation" 0
     Set-Regvalue $registryKey "BlockIsFinished" 0
-    $stepN = Query-RegValue  $registryKey "InstallStep"
     if ($Stop -is [bool] -and $Stop) {
         break;
     }
+    $stepN += 1
+    Set-RegValue $registryKey "InstallStep" $stepN
 }
 shoutOut "Setup-sequence ended." magenta
 
