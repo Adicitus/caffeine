@@ -341,7 +341,8 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
             "CAFRestart" {
                 shoutOut "CAFRestart operation, Restarting host..."
                 { shutdown /r /t 0 } | Run-Operation -OutNull
-                pause
+                sleep -Seconds 5
+                exit
             }
             "CAFForceInteractive" {
                 shoutOut "CAFForceInteractive operation." Cyan
