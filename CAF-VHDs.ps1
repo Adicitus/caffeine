@@ -65,6 +65,8 @@ function CAF-VHDs {
         $dism = "dism"
     }
 
+    "Using the following DISM.exe: '{0}'" -f $dism | shoutout
+
     $CAFStartTime = Get-Date
 
     $VMFolders = $VMFolders | % { if ($_ -notmatch "[\\/]$") { "$_\" } else { $_ } }
