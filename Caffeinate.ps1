@@ -434,7 +434,7 @@ while ($step = $installSteps[$stepN]){
     ShoutOut ("=" * 80) cyan
     
     shoutOut "Running PRE operations..." Cyan
-    $operations = "Operation", "Pre" | % { $conf[$step.Name].$_ }
+    $operations = "Pre", "Operation" | % { $conf[$step.Name].$_ }
     runOperations $registryKey "NextOperation" $operations $conf $OperationVars
 
     $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
