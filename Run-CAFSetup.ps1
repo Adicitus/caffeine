@@ -39,6 +39,8 @@ function Run-CAFSetup {
 
     if ($VMFolders = @($conf.HyperVStep.VMPath) + @($conf.Global.VMPath) | ? { $_ }) {
         shoutOut "CAFing VMs in '$( $VMFolders -join ", " ) '"
-        CAF-VMs -VMFolders $VMFolders -Configuration $Configuration -NoRearm:$SkipVMRearm
+        $ExcludePaths = @($conf.HyperVStep.VMPathExclude) + @($conf.Global.VMPathExclude) | ? { $_ }
+        
+        CAF-VMs -VMFolders $VMFolders -Configuration $Configuration -ExcludePaths $ExcludePaths -NoRearm:$SkipVMRearm
     }
 }

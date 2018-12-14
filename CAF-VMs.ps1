@@ -8,6 +8,7 @@ function CAF-VMs {
     param(
         [parameter(Mandatory=$false, Position=1)]$VMFolders='C:\Program Files\Microsoft Learning',
         [parameter(Mandatory=$false, position=2)]$Configuration = @{  },
+        [parameter(Mandatory=$false, Position=3)]$ExcludePaths = @(),
         [Switch]$NoRearm
     )
 
@@ -20,7 +21,7 @@ function CAF-VMs {
 
     shoutOut "Inventorying VHDs..." Cyan
     $autorunFiles = @( (ls "$PSScriptRoot\CAFAutorunFiles\*" | % { $_.FullName }) )
-    $VHDRecords = CAF-VHDs $VMFolders -Configuration $Configuration -AutorunFiles $autorunFiles
+    $VHDRecords = CAF-VHDs $VMFolders -Configuration $Configuration -AutorunFiles $autorunFiles -ExcludePaths $ExcludePaths
 
     shoutOut "Creating VHD lookup table..." Cyan
     $VHDRecordLookup = @{}
@@ -31,6 +32,7 @@ function CAF-VMs {
      
     shoutOut "Collecting VM files..." Cyan
     $t = ls -Recurse $VMFolders | ? { $_.FullName -match ".*[\\/]Virtual Machines[\\/].+\.(exp|vmcx|xml)$" }
+    $t = $t | ? { $p = $_.FullName; -not ($excludePaths | ? { $p -like $_ }) }
     shoutOut ("Found {0} files..." -f @($t).Count)
     $VMFiles = $t | Sort -Property FullName | Get-Unique
     shoutOut ("{0} non-duplicates..." -f @($VMFiles).Count)

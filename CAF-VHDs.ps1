@@ -56,6 +56,7 @@ function CAF-VHDs {
             }
         },
         $AutorunFiles = (ls "$PSScriptRoot\CAFAutorunFiles\*" | % { $_.FullName }),
+        $ExcludePaths = @(),
         $VHDMountDir = $null,
         $SymlinkDir = "C:\"
     )
@@ -76,6 +77,7 @@ function CAF-VHDs {
 
     shoutOut "Initializing VHD records..." Cyan
     $t = $VMFolders | ls -Recurse -File | ? { $_.Name -match "\.(a)?vhd(x)?$" }
+    $t = $t | ? { $p = $_.FullName; -not ($excludePaths | ? { $p -like $_ }) }
     shoutOut ("Found {0} VHD files..." -f @($t).Count)
     $VHDFiles = $t |Sort -Property FullName | Get-Unique
     shoutOut ("{0} non-duplicates..." -f @($VHDFiles).Count)
