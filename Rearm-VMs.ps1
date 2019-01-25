@@ -66,11 +66,6 @@ function Rearm-VMs {
         if ( ($p = $RearmVMsConfig["PostRearm"]) ) { $postRearmOps = $p } 
     }
 
-    $MaintenanceSwitchName = "Maintenance"
-
-    shoutOut "Adding '$MaintenanceSwitchName' switch..." Cyan
-    $MaintenanceSwitch = New-VMSwitch -Name $MaintenanceSwitchName -SwitchType "Internal"
-
     $VMs | % {
         
         $vm = $_
@@ -78,7 +73,7 @@ function Rearm-VMs {
         $preRearmOps | ? { $_ } | % { Run-Operation $_ }
         
         $arCreds = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) } | % { $_.Credential }
-        $success = ActiveRearm-VM $vm $arCreds $MaintenanceSwitch
+        $success = ActiveRearm-VM $vm $arCreds
 
         if (!$success) {
             $applicableEntries = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) }
@@ -97,9 +92,6 @@ function Rearm-VMs {
         $postRearmOps | ? { $_ } | % { Run-Operation $_ }
 
     }
-
-    shoutOut "Removing '$MaintenanceSwitchName' switch..." Cyan
-    $MaintenanceSwitch | Remove-VMSwitch -Force
 
     shoutOut "VM Rearm check finished..." Green
 }
