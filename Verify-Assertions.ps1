@@ -94,7 +94,10 @@ function Verify-Assertions{
             } catch {
                 $_
             }
-            $rs.Add(@($t, $r))
+            $wrap = New-Object System.Collections.ArrayList
+            $wrap.add($t)
+            $wrap.add($r)
+            $rs.Add($wrap)
         }
 
         $ErrorActionPreference = $OldErrorActionPreference
