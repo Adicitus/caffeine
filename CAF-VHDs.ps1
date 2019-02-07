@@ -299,7 +299,14 @@ function CAF-VHDs {
                     shoutOut "Trying to include a job file... ('$jobFile')"
                     if ( Test-Path $jobFile ) {
                         shoutOut "Including '$jobFile'..."
-                        cp $jobFile "$VHDMountDir\setup\setup.ini"
+                        $jobFileDestDir = "$VHDMountDir\setup"
+                        $jobFileDest = "$jobFileDestDir\setup.ini"
+
+                        if (!(Test-Path $jobFileDestDir -PathType Container)) {
+                            mkdir $jobFileDestDir
+                        }
+
+                        cp $jobFile $jobFileDest
                     } else {
                         shoutOut "Unable to find the desired job file!" Red
                     }
