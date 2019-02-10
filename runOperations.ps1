@@ -78,8 +78,8 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         switch ($o) {
             "CAFRestart" {
                 shoutOut "CAFRestart operation, Restarting host..."
-                { shutdown /r /t 0 } | Run-Operation -OutNull
-                sleep -Seconds 5
+                Restart-Computer -Force
+                Start-Sleep -Seconds 5
                 exit
             }
             "CAFForceInteractive" {
@@ -140,8 +140,6 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
 
                                 if ($r -match "Error Code 0") {
                                     shoutOut "Broke into interactive session and finished running there." Cyan
-                                    shoutOut "Caffeine finished, exiting non-interactive mode."
-                                    exit
                                 }
                             }
                         }
