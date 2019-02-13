@@ -117,7 +117,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
                 shoutOut "Found these users:" Cyan
                 shoutOut $users
 
-
+                
                 foreach ( $u in @($users)) {
                     $ss = gwmi -query "ASSOCIATORS OF {$($u.__PATH)} Where ResultClass=Win32_LogonSession" | ? { $_.LogonType -in 2,10,11,12,13 }
                     $ps = $ss | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} where ResultClass=Win32_Process" }
@@ -134,12 +134,13 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
                             shoutOut $cred
                             # Just in case we find more than one session ID for a user:
                             foreach ($sessionID in @($sessionIDs)) {
-                                $r = & "$ACGCoreDir\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $PSCommandPath *>&1
+                                $r = & "$ACGCoreDir\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . "$PSScriptRoot\caffeinate.ps1" *>&1
                                 shoutOut "Result:" Cyan
                                 shoutOut "'$r'"
 
                                 if ($r -match "Error Code 0") {
                                     shoutOut "Broke into interactive session and finished running there." Cyan
+                                    exit
                                 }
                             }
                         }
