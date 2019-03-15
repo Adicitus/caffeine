@@ -82,7 +82,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         switch ($o) {
             "CAFRestart" {
                 shoutOut "CAFRestart operation, Restarting host..."
-                Restart-Computer -Force
+                shutdown /r /t 3
                 $shouldQuit = $true
             }
             "CAFForceInteractive" {

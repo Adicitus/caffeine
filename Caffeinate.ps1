@@ -108,6 +108,10 @@ $SetupRoot = Split-Path $JobFile
 
 shoutOut "Done!" Green
 
+# =========================================================================== #
+# ===================== End: Getting job configuration ====================== #
+# =========================================================================== #
+
 Install-CAFRegistry $registryKey $conf ". '$PSCommandPath'" $JobFile $SetupRoot
 
 $stepN = Query-RegValue  $registryKey "InstallStep"
@@ -131,6 +135,10 @@ $n = 0
 }
 
 # =========================================================================== #
+# ===================== End: Defining setup-sequence ======================== #
+# =========================================================================== #
+
+# =========================================================================== #
 # ======================= Start: Setup-Sequence loop ======================== #
 # =========================================================================== #
 
@@ -151,7 +159,7 @@ while ($step = $installSteps[$stepN]){
     shoutOut "Running PRE operations..." Cyan
     $operations = "Pre", "Operation" | % { $conf[$step.Name].$_ }
     $shouldQuit = runOperations $registryKey "NextOperation" $operations $conf $OperationVars
-    $shouldQuit | shoutOut
+    shoutOut $shouldQuit
     if ($shouldQuit) {
         "Quitting setup because runOperations signaled we should." | shoutOut
         return
@@ -168,6 +176,7 @@ while ($step = $installSteps[$stepN]){
     shoutOut "Running POST operations..." Cyan
     $operations = $conf[$step.Name].Post
     $shouldQuit = runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
+    shoutOut $shouldQuit
     if ($shouldQuit) { 
         "Quitting setup because runOperations signaled we should." | shoutOut
         return
@@ -189,5 +198,12 @@ $operations = $conf["Global"].Post
 Set-Regvalue $registryKey "NextOperation.Global" 0
 runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars
 
+# =========================================================================== #
+# ======================== End: Setup-Sequence loop ========================= #
+# =========================================================================== #
+
 shoutOut "Caffeination done!" Green
 
+# =========================================================================== #
+# ========================= End: Main script body =========================== #
+# =========================================================================== #
