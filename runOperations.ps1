@@ -44,8 +44,12 @@ time the script is run (for example by prepopulating the $conf variable with dyn
 
 So this function won't be used outside of caffeinate.ps1 for the forseeable future.
 #>
+
+. "$PSScriptRoot\Force-Interactive.ps1"
+
 function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
+    $shouldQuit = $false
     
     function GetNextOperationNumber() {
         return Query-RegValue $registryKey $registryValue 
@@ -72,80 +76,29 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         Set-Regvalue $registryKey $registryValue $OperationN
     }
 
-    Set-Regvalue $registryKey $registryValue ($OperationN+1) # Increment the pointer.
+    Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
     while ( $Operations -and ($o = @($Operations)[$OperationN]) ) {
         shoutOut "Operation #$OperationN... " cyan
         switch ($o) {
             "CAFRestart" {
                 shoutOut "CAFRestart operation, Restarting host..."
                 Restart-Computer -Force
-                Start-Sleep -Seconds 5
-                exit
+                $shouldQuit = $true
             }
             "CAFForceInteractive" {
+
                 shoutOut "CAFForceInteractive operation." Cyan
                 shoutOut "Attempting to enter into an interactive user session." Cyan
 
-                if ([Environment]::UserInteractive) {
-                    shoutOut "Already in an interactive session." Cyan
-                    continue
+                $r = Force-Interactive $conf
+
+                if ($r) {
+                    "Broke into interactive session and finished running there." | shoutOut -MsgType Success
+                    $shouldQuit = $true
+                } else {
+                    "Failed to enter into an interactive session!" | shoutOut -MsgType Error
                 }
 
-                $credentials = $conf.Keys | ? { $_ -match "^Credential" } | % { $conf[$_] }
-                shoutOut "Found these credentials:" Cyan
-                shoutOut $credentials
-
-                shoutOut "Looking for logged on users..." Cyan
-                do {
-                    $interactiveSessions = gwmi -query "Select __PATH From Win32_LogonSession WHERE LogonType=2 OR LogonType=10 OR LogonType=11 OR LogonType=12 OR LogonType=13"
-                    $users = $interactiveSessions | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} WHERE ResultClass=Win32_UserAccount" }
-                    # We're only interested in users whose credential are available.
-                    $users = $users | ? {
-                        $u = $_
-                        $credentials | ? {
-                            $r = $_.Username -eq $u.Name
-                            if ($_.Domain -and ($_.Domain -ne ".")) {
-                                $r = $r -and ($u.Domain -eq $_.Domain)
-                            } else {
-                                $r = $r -and ($u.Domain -eq $Env:COMPUTERNAME)
-                            }
-                            $r
-                        }
-                    }
-                } while($users -eq $null)
-                
-                shoutOut "Found these users:" Cyan
-                shoutOut $users
-
-                
-                foreach ( $u in @($users)) {
-                    $ss = gwmi -query "ASSOCIATORS OF {$($u.__PATH)} Where ResultClass=Win32_LogonSession" | ? { $_.LogonType -in 2,10,11,12,13 }
-                    $ps = $ss | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} where ResultClass=Win32_Process" }
-                    $sessionIDs = $ps | % { $_.SessionID } | sort -Unique
-
-                    foreach($cred in @($credentials)) {
-                        $k = if ((-not $cred.Domain) -or ($cred.Domain -eq ".")) {
-                                "${env:COMPUTERNAME}\$($cred.Username)"
-                            } else {
-                                "$($cred.Domain)\$($cred.Username)"
-                            }
-                        if ($u.Caption -eq $k) {
-                            shoutOut "Trying these credentials:" Cyan
-                            shoutOut $cred
-                            # Just in case we find more than one session ID for a user:
-                            foreach ($sessionID in @($sessionIDs)) {
-                                $r = & "$ACGCoreDir\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . "$PSScriptRoot\caffeinate.ps1" *>&1
-                                shoutOut "Result:" Cyan
-                                shoutOut "'$r'"
-
-                                if ($r -match "Error Code 0") {
-                                    shoutOut "Broke into interactive session and finished running there." Cyan
-                                    exit
-                                }
-                            }
-                        }
-                    }
-                }
             }
             default {
                 $o | Run-Operation -OutNull
@@ -154,6 +107,15 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         shoutOut "Operation #$OperationN done!" Green
 
         $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
-        Set-Regvalue $registryKey $registryValue ($OperationN+1) # Increment the pointer.
+        Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
+
+        if ($shouldQuit) {
+            shoutOut "Operations indicate that the script should quit."
+            Break
+        }
+
     }
+
+    return $shouldQuit
+
 }

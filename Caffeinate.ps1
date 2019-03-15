@@ -141,7 +141,7 @@ $OperationVars = @{}
 shoutOut "Running pre-setup operations..." Cyan
 $operations = $conf["Global"].Pre
 Set-Regvalue $registryKey "NextOperation.Global" 0
-runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars
+runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars | Out-Null
 
 shoutOut "Starting setup-sequence..." Magenta
 while ($step = $installSteps[$stepN]){
@@ -150,7 +150,12 @@ while ($step = $installSteps[$stepN]){
     
     shoutOut "Running PRE operations..." Cyan
     $operations = "Pre", "Operation" | % { $conf[$step.Name].$_ }
-    runOperations $registryKey "NextOperation" $operations $conf $OperationVars
+    $shouldQuit = runOperations $registryKey "NextOperation" $operations $conf $OperationVars
+    $shouldQuit | shoutOut
+    if ($shouldQuit) {
+        "Quitting setup because runOperations signaled we should." | shoutOut
+        return
+    }
 
     $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
     if (-not $blockIsFinished) {
@@ -162,7 +167,11 @@ while ($step = $installSteps[$stepN]){
 
     shoutOut "Running POST operations..." Cyan
     $operations = $conf[$step.Name].Post
-    runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
+    $shouldQuit = runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
+    if ($shouldQuit) { 
+        "Quitting setup because runOperations signaled we should." | shoutOut
+        return
+    }
 
     Set-Regvalue $registryKey "NextOperation" 0
     Set-Regvalue $registryKey "NextPostOperation" 0
