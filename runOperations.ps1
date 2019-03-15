@@ -50,7 +50,8 @@ So this function won't be used outside of caffeinate.ps1 for the forseeable futu
 function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
     $shouldQuit = $false
-    
+    $shouldIncrement = $true
+
     function GetNextOperationNumber() {
         return Query-RegValue $registryKey $registryValue 
     }
@@ -73,7 +74,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
 
     if ($OperationN -eq $null) {
         $OperationN = 0
-        Set-Regvalue $registryKey $registryValue $OperationN
+        Set-Regvalue $registryKey $registryValue $OperationN | Out-Null
     }
 
     Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
@@ -82,8 +83,9 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         switch ($o) {
             "CAFRestart" {
                 shoutOut "CAFRestart operation, Restarting host..."
-                shutdown /r /t 3
+                shutdown /r /t 3 | Out-Null
                 $shouldQuit = $true
+                $shouldIncrement = $false
             }
             "CAFForceInteractive" {
 
@@ -95,6 +97,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
                 if ($r) {
                     "Broke into interactive session and finished running there." | shoutOut -MsgType Success
                     $shouldQuit = $true
+                    $shouldIncrement = $false
                 } else {
                     "Failed to enter into an interactive session!" | shoutOut -MsgType Error
                 }
@@ -106,8 +109,10 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
         }
         shoutOut "Operation #$OperationN done!" Green
 
-        $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
-        Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
+        if ($shouldIncrement) {
+            $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
+            Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
+        }
 
         if ($shouldQuit) {
             shoutOut "Operations indicate that the script should quit."
