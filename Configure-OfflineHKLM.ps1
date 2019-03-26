@@ -1,5 +1,4 @@
-﻿. "$PSScriptRoot\Common\ShoutOut.ps1"
-. "$PSScriptRoot\Common\Run-Operation.ps1"
+﻿. "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\Common\Steal-RegKey.ps1"
 
 function Configure-OfflineHKLM {

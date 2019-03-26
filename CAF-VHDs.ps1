@@ -1,6 +1,5 @@
 ﻿# Collecting, Analyzing and Fixing VM VHDs
 
-. "$PSScriptRoot\Common\ShoutOut.ps1"
 . "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\Common\Find-VolumePath.ps1"
 . "$PSScriptRoot\Common\Query-RegValue.ps1"

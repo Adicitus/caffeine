@@ -1,5 +1,4 @@
-﻿. "$PSScriptRoot\common\shoutOut.ps1"
-
+﻿
 function Configure-NAT {
     param($configuration)
 

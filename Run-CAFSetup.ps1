@@ -1,6 +1,5 @@
 ﻿# Collect, Analyze, Fix Setup
 
-. "$PSScriptRoot\Common\ShoutOut.ps1"
 . "$PSScriptRoot\Common\Run-Operation.ps1"
 . "$PSScriptRoot\Common\New-PSCredential.ps1"
 . "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
