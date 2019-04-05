@@ -37,27 +37,6 @@ if (!$dimo -or ($dimo -ne "0409:0000041D")) {
 $rearmPerformed = $false
 
 . $log "computer: $($Env:COMPUTERNAME)"
-$rearmFiles = ls -Recurse "${env:ProgramFiles(x86)}" -Filter "*ospp.vbs" | % { $_.FullName }
-if ($rearmfiles) {
-    . $log  ("Office Rearm files (*ospp.vbs) found: $( $rearmFiles -join ", " )")
-    $r = $rearmFiles | % {
-        . $log "Checking $_"
-        $r = cscript $_ /dstatus
-        $rf = $r -join "`n"
-        if ($rf -match "REMAINING GRACE: [0-7] days") {
-            . $log (cscript $_ /rearm *>&1)
-            $rearmPerformed = $true
-            . $log "Rearmed."
-        } else {
-            . $log "No need to rearm."
-        }
-
-    } *>&1
-
-    . $log $r
-} else {
-    . $log "No rearm files found."
-}
 
 $licenses = Get-WmiObject SoftwareLicensingProduct | ? {
     $_.LicenseStatus -ne 1
