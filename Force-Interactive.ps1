@@ -1,10 +1,10 @@
+#requires -Modules ACGCore
+
 function Force-Interactive{
     param(
         $conf,
         [string]$command = "$PSScriptRoot\caffeinate.ps1"
     )
-
-    $ACGCoreDir = Get-Module ACGCore | % ModuleBase
 
     if ([Environment]::UserInteractive) {
         shoutOut "Already in an interactive session." Cyan
@@ -54,7 +54,7 @@ function Force-Interactive{
                 shoutOut $cred
                 # Just in case we find more than one session ID for a user:
                 foreach ($sessionID in @($sessionIDs)) {
-                    $r = & "$ACGCoreDir\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $command *>&1
+                    $r = & "$PSScriptRoot\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $command *>&1
                     shoutOut "Result:" Cyan
                     shoutOut "'$r'"
 

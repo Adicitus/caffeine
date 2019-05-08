@@ -1,7 +1,6 @@
-﻿. "$PSScriptRoot\Common\New-PSCredential.ps1"
-. "$PSScriptRoot\Common\ActiveRearm-VM.ps1"
-. "$PSScriptRoot\Common\Run-Operation.ps1"
+﻿#requires -Modules ACGCore
 . "$PSScriptRoot\PassiveRearm-VM.ps1"
+
 function Rearm-VMs {
     param(
         [parameter(position=1)]$VMs,

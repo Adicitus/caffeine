@@ -1,5 +1,5 @@
-﻿. "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
-. "$PSScriptRoot\Common\Rebase-VHDFiles.ps1" -Import
+﻿#requires -Modules ACGCore
+
 . "$PSScriptRoot\CAF-VHDs.ps1"
 . "$PSScriptRoot\Rearm-VMs.ps1"
 

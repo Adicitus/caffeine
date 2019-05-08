@@ -1,5 +1,4 @@
-﻿. "$PSScriptRoot\Common\Run-Operation.ps1"
-. "$PSScriptRoot\Common\Steal-RegKey.ps1"
+﻿#requires -Modules ACGCore
 
 function Configure-OfflineHKLM {
     param(

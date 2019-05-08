@@ -1,8 +1,7 @@
 ﻿# Collect, Analyze, Fix Setup
 
-. "$PSScriptRoot\Common\Run-Operation.ps1"
-. "$PSScriptRoot\Common\New-PSCredential.ps1"
-. "$PSScriptRoot\Common\Parse-ConfigFile.ps1"
+#requires -Modules ACGCore
+
 . "$PSScriptRoot\Configure-NAT.ps1"
 . "$PSScriptRoot\Create-VMSwitch.ps1"
 . "$PSScriptRoot\CAF-VMs.ps1"

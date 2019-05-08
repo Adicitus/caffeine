@@ -1,4 +1,4 @@
-﻿. "$PSScriptRoot\Common\Query-RegValue.ps1"
+﻿#requires -MOdules ACGCore
 
 function Install-CAFRegistry {
     param(

@@ -1,3 +1,5 @@
+#requires -Modules ACGCore
+
 <#
 .SYNOPSIS
 Helper function, runs operations.

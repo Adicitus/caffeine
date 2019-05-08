@@ -1,8 +1,7 @@
 ﻿# Collecting, Analyzing and Fixing VM VHDs
 
-. "$PSScriptRoot\Common\Run-Operation.ps1"
-. "$PSScriptRoot\Common\Find-VolumePath.ps1"
-. "$PSScriptRoot\Common\Query-RegValue.ps1"
+#requires -Modules ACGCore
+
 . "$PSScriptRoot\Configure-OfflineHKLM.ps1"
 . "$PSScriptRoot\Configure-OfflineHKUs.ps1"
 
@@ -60,7 +59,7 @@ function CAF-VHDs {
         $SymlinkDir = "C:\"
     )
 
-    $dism = "$PSScriptRoot\Common\bin\DISM\dism.exe"
+    $dism = "$PSScriptRoot\bin\DISM\dism.exe"
     if ( !(Test-Path $dism) ) {
         $dism = "dism"
     }

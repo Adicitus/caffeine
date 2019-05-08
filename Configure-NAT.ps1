@@ -1,4 +1,6 @@
-﻿
+﻿#requires -Modules ShoutOut
+
+
 function Configure-NAT {
     param($configuration)
 

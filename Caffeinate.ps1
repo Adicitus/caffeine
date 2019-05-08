@@ -1,4 +1,6 @@
-﻿<# CAFfeinate the machine!
+﻿#requires -Modules ACGCore
+
+<# CAFfeinate the machine!
 .SYNOPSIS
 This is the core script for the Caffeine setup method, it is used to manage
 the flow of the setup process.

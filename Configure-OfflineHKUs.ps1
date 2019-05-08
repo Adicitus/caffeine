@@ -1,4 +1,4 @@
-﻿. "$PSScriptRoot\Common\Run-Operation.ps1"
+﻿#requires -Modules ACGCore
 
 function Configure-OfflineHKUs {
     param(

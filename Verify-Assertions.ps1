@@ -1,3 +1,5 @@
+#requires -Modules ShoutOut
+
 <#
 .SYNOPSIS
 Verifies a set of assertions provided in the configuration object.

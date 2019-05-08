@@ -1,4 +1,6 @@
 
+#requires -Modules ACGCore
+
 . "$PSScriptRoot\Peel-PodFile.ps1"
 . "$PSScriptRoot\Verify-Assertions.ps1"
 . "$PSScriptRoot\Run-CAFSetup.ps1"
@@ -99,7 +101,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
             shoutOut "Modifying the taskbar..."
             shoutOut "Available apps:"
             Run-Operation { (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | % { $_.Name } }
-            . "$PSSCriptRoot\Common\Pin-App.ps1"
+            
             if ($conf.Taskbar.ContainsKey("Pin")) {
                 $conf.Taskbar.Pin | ? { $_ -is [string] } | % { shoutOUt "Pinning '$_'"; $_ } | % { Pin-App $_ }
             }

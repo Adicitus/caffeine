@@ -1,5 +1,4 @@
-﻿. "$PSScriptRoot\Common\Run-Operation.ps1"
-. "$PSScriptRoot\Common\RegexPatterns.ps1"
+﻿#requires -Modules ACGCore
 
 Function Create-VMSwitch{
     param(
@@ -96,7 +95,7 @@ Function Create-VMSwitch{
             shoutOut "Adding new IP address... ($($targetIpAddress))" Cyan
             $d = @{ }
             $d.IPAddress = $targetIpAddress
-            if ($Config.Netmask -match $RegexPatterns.IPv4Netmask) {
+            if (Test-ACGCoreRegexPattern $Config.Netmask IPv4Netmask) {
                 shoutOut "Using netmask '$($Config.Netmask)': " Cyan -NoNewline
                 $bs = ($Config.Netmask -split "\." | % {
                     [Convert]::toString($_,2)
@@ -114,7 +113,7 @@ Function Create-VMSwitch{
     if ($config.DNS) {
         shoutOut "Adding DNS addresses..." Cyan
         $config.DNS | % {
-            if ($_ -match $RegexPatterns.IPv4Address) {
+            if (Test-ACGCoreRegexPattern $_ IPv4Address) {
                 shoutOut "Adding '$_'... " -NoNewline
             } else {
                 shoutOut "Invalid address: '$_'" Red

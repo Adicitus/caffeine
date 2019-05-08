@@ -1,7 +1,5 @@
 ﻿
-. "$PSScriptRoot\Common\Unpack-RARFile.ps1"
-. "$PSScriptRoot\Common\Unpack-ArchiveDisk.ps1"
-. "$PSScriptRoot\Common\Install-HiveDisk.ps1"
+#requires -Modules ACGCore
 
 
 function Peel-PodFile($podFile){

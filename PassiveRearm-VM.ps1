@@ -1,7 +1,4 @@
-﻿
-. "$PSScriptRoot\Common\Find-VolumePath.ps1"
-. "$PSScriptRoot\Common\Query-RegValue.ps1"
-. "$PSScriptRoot\Common\Set-RegValue.ps1"
+﻿#requires -Modules ACGCore
 
 # ! NOTE: This function needs to be carefully maintained, it should only return $true or $false. ! #
 function PassiveRearm-VM {
