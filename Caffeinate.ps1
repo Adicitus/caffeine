@@ -74,10 +74,13 @@ if (-not (Get-Command ShoutOut -ea SilentlyContinue)) {
 # =========================================================================== #
 
 . "$PSScriptRoot\Install-CAFRegistry.ps1"
+. "$PSScriptRoot\_verifyHives.ps1"
 
 Set-ShoutOutConfig -LogFile $LogFile
 
 shoutOut "Starting caffeination..."
+
+_verifyHives
 
 $registryKey = "HKLM\SOFTWARE\CAFSetup"
 shoutOut "Using registry key '$registryKey'..." cyan 
