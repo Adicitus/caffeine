@@ -2,6 +2,10 @@
     [Switch]$Silent
 )
 
+if (-not (Get-Variable "PSScriptRoot")) {
+    $PSScriptRoot = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
+}
+
 import-module International
 
 . "$PSScriptRoot\includes\log.ps1"
@@ -39,9 +43,9 @@ $rearmPerformed = $false
 . $log "computer: $($Env:COMPUTERNAME)"
 
 $licenses = Get-WmiObject SoftwareLicensingProduct | ? {
-    $_.LicenseStatus -ne 1
+    $_.LicenseStatus -ne 0 -and $_.LicenseStatus -ne 1
 } | ? {
-    $_.PartialProductKey -and ($_.Licensefamily -match "Office|Eval")
+    $_.PartialProductKey
 } | ? {
     ($_.LicenseStatus -eq 5) -or ($_.GracePeriodRemaining -lt (1 * 24 * 60))
 }# Wait for notification state or until the last 24h to rearm, since we only
@@ -53,9 +57,16 @@ if ($licenses) {
             . $log "Rearming: $($_.Description) ($($_.LicenseFamily)): $($_.LicenseStatus) ($($_.GracePeriodRemaining) minutes left, $($_.RemainingSkuReArmCount) SKU rearms left)"
                 
             try {
-                . $log ($_.ReArmSku() *>&1)
-                $rearmPerformed = $true
-                sleep 10
+                if ($_ | gm "RearmSku") {
+                    . $log ($_.ReArmSku() *>&1)
+                    $rearmPerformed = $true
+                } else {
+                    if ($_.Description -like "Windows Operating System*") {
+                        $oslicService = gwmi SoftwareLicensingService
+                        . $log ( $oslicService.RearmWindows 2>&1 )
+                        $rearmPerformed = $true
+                    }
+                }
             } catch {
                 . $log $_
             }     

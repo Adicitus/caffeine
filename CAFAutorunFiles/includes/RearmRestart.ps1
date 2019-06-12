@@ -1,5 +1,9 @@
 ﻿param($onRearmAction)
 
+if (-not (Get-Variable "PSScriptRoot")) {
+    $PSScriptRoot = Split-Path -Parent -Path $MyInvocation.MyCommand.Definition
+}
+
 . "$PSScriptRoot\log.ps1"
 
 # Prompt for consent to restart the machine.
