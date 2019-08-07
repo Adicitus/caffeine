@@ -108,10 +108,13 @@ function Verify-Assertions{
 
         "Checking results... " | shoutOut -NoNewLine
         $failedTests = @()
+        $results = @{}
         $p = $true
         if ($rs.length -eq 0) {
             $p = $false
         } else {
+            $results[$_[0]] = $_[1]
+
             $rs | % {
                 if ( !(. $assertTypes[$assert.Type].Check $_[1]) ) {
                     $p = $false
@@ -121,7 +124,14 @@ function Verify-Assertions{
         }
         $msg = if($p) { "Passed!" } else { "Failed!" }
         shoutOut $msg
-        $result += @{ Name=$_.Name; Type=$_.Type; Description=$_.Description; Passed=$p; FailedTests=$failedTests }
+        $result += @{
+            Name=$_.Name
+            Type=$_.Type
+            Description=$_.Description
+            Passed=$p
+            FailedTests=$failedTests
+            Results=$results
+        }
     }
     
     shoutOut "Outputting results to '$logFile'..."
