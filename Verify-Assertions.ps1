@@ -91,19 +91,22 @@ function Verify-Assertions{
 
         $_.Test | % {
             $t = $_
+            "Running '{0}'..." -f $t | shoutOut
             $r = try {
                 Invoke-Expression $t
             } catch {
                 $_
             }
+            "Result: '{0}'." -f $r | shoutOut
             $wrap = New-Object System.Collections.ArrayList
-            $wrap.add($t)
-            $wrap.add($r)
-            $rs.Add($wrap)
+            $wrap.add($t) | Out-Null
+            $wrap.add($r) | Out-Null
+            $rs.Add($wrap) | Out-Null
         }
 
         $ErrorActionPreference = $OldErrorActionPreference
 
+        "Checking results... " | shoutOut -NoNewLine
         $failedTests = @()
         $p = $true
         if ($rs.length -eq 0) {
