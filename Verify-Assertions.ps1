@@ -113,9 +113,10 @@ function Verify-Assertions{
         if ($rs.length -eq 0) {
             $p = $false
         } else {
-            $results[$_[0]] = $_[1]
 
             $rs | % {
+                $results[$_[0]] = $_[1] | Out-String
+                
                 if ( !(. $assertTypes[$assert.Type].Check $_[1]) ) {
                     $p = $false
                     $failedTests += $_[0]
