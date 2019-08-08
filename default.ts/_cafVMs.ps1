@@ -1,10 +1,10 @@
 ﻿#requires -Modules ACGCore
 
-. "$PSScriptRoot\CAF-VHDs.ps1"
-. "$PSScriptRoot\Rearm-VMs.ps1"
+. "$PSScriptRoot\_cafVHDs.ps1"
+. "$PSScriptRoot\_rearmVMs.ps1"
 
 
-function CAF-VMs {
+function _cafVMs {
     param(
         [parameter(Mandatory=$false, Position=1)]$VMFolders='C:\Program Files\Microsoft Learning',
         [parameter(Mandatory=$false, position=2)]$Configuration = @{  },
@@ -21,7 +21,7 @@ function CAF-VMs {
 
     shoutOut "Inventorying VHDs..." Cyan
     $autorunFiles = @( (ls "$PSScriptRoot\CAFAutorunFiles\*" | % { $_.FullName }) )
-    $VHDRecords = CAF-VHDs $VMFolders -Configuration $Configuration -AutorunFiles $autorunFiles -ExcludePaths $ExcludePaths
+    $VHDRecords = _cafVHDs $VMFolders -Configuration $Configuration -AutorunFiles $autorunFiles -ExcludePaths $ExcludePaths
 
     shoutOut "Creating VHD lookup table..." Cyan
     $VHDRecordLookup = @{}
@@ -123,7 +123,7 @@ function CAF-VMs {
     if (!$NoRearm) {
         if ($VMsToRearm -and ($VMsToRearm.Count -gt 0)) {
             shoutOUt "Rearming $( ($VMsToRearm | % { $_.VMName }) -join ", " )"
-            Rearm-VMs $VMsToRearm $Configuration
+            _rearmVMs $VMsToRearm $Configuration
         } else {
             shoutOut "No VMs need to be rearmed."
         }

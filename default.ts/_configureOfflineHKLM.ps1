@@ -1,6 +1,6 @@
 ﻿#requires -Modules ACGCore
 
-function Configure-OfflineHKLM {
+function _configureOfflineHKLM {
     param(
         [parameter(Mandatory=$true, Position=1)]$VHDMountDir,
         [parameter(Mandatory=$true, Position=2)]$Configuration

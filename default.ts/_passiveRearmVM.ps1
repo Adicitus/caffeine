@@ -1,7 +1,7 @@
 ﻿#requires -Modules ACGCore
 
 # ! NOTE: This function needs to be carefully maintained, it should only return $true or $false. ! #
-function PassiveRearm-VM {
+function _passiveRearmVM {
     param(
         $vm,
         $credentialEntry = @{

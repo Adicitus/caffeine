@@ -1,7 +1,7 @@
 ﻿#requires -Modules ACGCore
-. "$PSScriptRoot\PassiveRearm-VM.ps1"
+. "$PSScriptRoot\_passiveRearmVM.ps1"
 
-function Rearm-VMs {
+function _rearmVMs {
     param(
         [parameter(position=1)]$VMs,
         [parameter(position=2)]$Configuration = @{ }
@@ -77,7 +77,7 @@ function Rearm-VMs {
         if (!$success) {
             $applicableEntries = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) }
             foreach ($entry in $applicableEntries) {
-                $success = PassiveRearm-VM $vm $entry
+                $success = _passiveRearmVM $vm $entry
                 if ($success) { break }
             }
         }

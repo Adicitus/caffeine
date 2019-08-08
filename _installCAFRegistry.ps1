@@ -1,6 +1,6 @@
 ﻿#requires -MOdules ACGCore
 
-function Install-CAFRegistry {
+function _installCAFRegistry {
     param(
         $registryKey,
         $conf,

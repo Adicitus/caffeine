@@ -1,6 +1,6 @@
 ﻿#requires -Modules ACGCore
 
-Function Create-VMSwitch{
+Function _createVMSwitch{
     param(
         [parameter(Position=1)]$NetworkTitle,
         [parameter(Position=2)]$Config

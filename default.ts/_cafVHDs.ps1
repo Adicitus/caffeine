@@ -2,8 +2,8 @@
 
 #requires -Modules ACGCore
 
-. "$PSScriptRoot\Configure-OfflineHKLM.ps1"
-. "$PSScriptRoot\Configure-OfflineHKUs.ps1"
+. "$PSScriptRoot\_configureOfflineHKLM.ps1"
+. "$PSScriptRoot\_configureOfflineHKUs.ps1"
 
 
 <# Collect, Analyze and Fix VHDs
@@ -38,7 +38,7 @@
     - Uses Common\Bin\dism.exe instead of native dism command to avoid having to install the latest version of the ADK in every deployment.
 
  #>
-function CAF-VHDs {
+function _cafVHDs {
     param(
         $VMFolders="C:\Program Files",
         $Configuration = @{
@@ -371,8 +371,8 @@ function CAF-VHDs {
                 }
             }
         
-            Configure-OfflineHKLM $VHDMountDir $Configuration
-            Configure-OfflineHKUs $VHDMountDir $Configuration
+            _configureOfflineHKLM $VHDMountDir $Configuration
+            _ConfigureOfflineHKUs $VHDMountDir $Configuration
 
             #-----------------------------------------------------------------#
             #                           End of Fixing                         #

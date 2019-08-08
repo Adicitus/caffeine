@@ -1,6 +1,6 @@
 #requires -Modules ACGCore
 
-function Force-Interactive{
+function _forceInteractive{
     param(
         $conf,
         [string]$command = "$PSScriptRoot\caffeinate.ps1"

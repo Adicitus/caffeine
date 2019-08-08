@@ -25,7 +25,7 @@ To provide a bit more information about an assertion a "Description" declaration
 can be used (Description=<description of the assertion>).
 
 #>
-function Verify-Assertions{
+function _verifyAssertions{
     param(
         [hashtable]$conf,
         $logFile="C:\caffeinate.asserts.json"

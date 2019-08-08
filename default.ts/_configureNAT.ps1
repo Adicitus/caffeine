@@ -1,7 +1,7 @@
 ﻿#requires -Modules ShoutOut
 
 
-function Configure-NAT {
+function _configureNAT {
     param($configuration)
 
     if (!$configuration) {

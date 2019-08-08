@@ -2,9 +2,9 @@
 
 #requires -Modules ACGCore
 
-. "$PSScriptRoot\Configure-NAT.ps1"
-. "$PSScriptRoot\Create-VMSwitch.ps1"
-. "$PSScriptRoot\CAF-VMs.ps1"
+. "$PSScriptRoot\_configureNAT.ps1"
+. "$PSScriptRoot\_createVMSwitch.ps1"
+. "$PSScriptRoot\_cafVMs.ps1"
 
 
 <#
@@ -14,7 +14,7 @@
 .SYNOPSIS
     Collects, analyzes and makes fixes to VMs and their associated VHDs
 #>
-function Run-CAFSetup {
+function _runCAFSetup {
     param(
         $Configuration,
         [Switch]$SkipVMRearm
@@ -29,16 +29,16 @@ function Run-CAFSetup {
 
     shoutOut "Configuring VMSwitches..." Cyan
     $networks | % {
-        Create-VMSwitch $_ $Configuration[$_]
+        _createVMSwitch $_ $Configuration[$_]
     }
 
     ShoutOUt "Configuring NAT..."
-    Configure-NAT $Configuration
+    _configureNAT $Configuration
 
     if ($VMFolders = @($conf.HyperVStep.VMPath) + @($conf.Global.VMPath) | ? { $_ }) {
         shoutOut "CAFing VMs in '$( $VMFolders -join ", " ) '"
         $ExcludePaths = @($conf.HyperVStep.VMPathExclude) + @($conf.Global.VMPathExclude) | ? { $_ }
         
-        CAF-VMs -VMFolders $VMFolders -Configuration $Configuration -ExcludePaths $ExcludePaths -NoRearm:$SkipVMRearm
+        _cafVMs -VMFolders $VMFolders -Configuration $Configuration -ExcludePaths $ExcludePaths -NoRearm:$SkipVMRearm
     }
 }

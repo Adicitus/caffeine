@@ -2,7 +2,7 @@
 #requires -Modules ACGCore
 
 
-function Peel-PodFile($podFile){
+function _peelPodFile($podFile){
     shoutOut "Evaluating '$($PodFile.FullName)'... " cyan -NoNewline
     switch -Regex ($PodFile.Name) {
         # File is an FS hive.

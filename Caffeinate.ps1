@@ -73,7 +73,7 @@ if (-not (Get-Command ShoutOut -ea SilentlyContinue)) {
 # ======================== Start: Main script body ========================== #
 # =========================================================================== #
 
-. "$PSScriptRoot\Install-CAFRegistry.ps1"
+. "$PSScriptRoot\_installCAFRegistry.ps1"
 . "$PSScriptRoot\_verifyHives.ps1"
 
 Set-ShoutOutConfig -LogFile $LogFile
@@ -117,7 +117,7 @@ shoutOut "Done!" Green
 # ===================== End: Getting job configuration ====================== #
 # =========================================================================== #
 
-Install-CAFRegistry $registryKey $conf ". '$PSCommandPath'" $JobFile $SetupRoot
+_installCAFRegistry $registryKey $conf ". '$PSCommandPath'" $JobFile $SetupRoot
 
 $stepN = Query-RegValue  $registryKey "InstallStep"
 
@@ -127,7 +127,7 @@ $stepN = Query-RegValue  $registryKey "InstallStep"
 
 $tsf = $conf.Global.TaskSequenceFile | Select-Object -Last 1
 if (!($tsf -is [string] -and (Test-Path $tsf))) {
-    $tsf = "$PSScriptRoot\default.ts.ps1"
+    $tsf = "$PSScriptRoot\default.ts\default.ts.ps1"
 }
 "Using task sequence defined in '{0}'..." -f $tsf | shoutOut -Foreground Cyan
 $installSteps = New-Object System.Collections.ArrayList
@@ -147,14 +147,14 @@ $n = 0
 # ======================= Start: Setup-Sequence loop ======================== #
 # =========================================================================== #
 
-. "$PSScriptRoot\runOperations.ps1"
+. "$PSScriptRoot\_runOperations.ps1"
 
 $OperationVars = @{}
 
 shoutOut "Running pre-setup operations..." Cyan
 $operations = $conf["Global"].Pre
 Set-Regvalue $registryKey "NextOperation.Global" 0
-runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars | Out-Null
+_runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars | Out-Null
 
 shoutOut "Starting setup-sequence..." Magenta
 while ($step = $installSteps[$stepN]){
@@ -163,10 +163,10 @@ while ($step = $installSteps[$stepN]){
     
     shoutOut "Running PRE operations..." Cyan
     $operations = "Pre", "Operation" | % { $conf[$step.Name].$_ }
-    $shouldQuit = runOperations $registryKey "NextOperation" $operations $conf $OperationVars
+    $shouldQuit = _runOperations $registryKey "NextOperation" $operations $conf $OperationVars
     shoutOut $shouldQuit
     if ($shouldQuit) {
-        "Quitting setup because runOperations signaled we should." | shoutOut
+        "Quitting setup because _runOperations signaled we should." | shoutOut
         return
     }
 
@@ -180,10 +180,10 @@ while ($step = $installSteps[$stepN]){
 
     shoutOut "Running POST operations..." Cyan
     $operations = $conf[$step.Name].Post
-    $shouldQuit = runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
+    $shouldQuit = _runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
     shoutOut $shouldQuit
     if ($shouldQuit) { 
-        "Quitting setup because runOperations signaled we should." | shoutOut
+        "Quitting setup because _runOperations signaled we should." | shoutOut
         return
     }
 
@@ -201,7 +201,7 @@ shoutOut "Setup-sequence ended." magenta
 shoutOut "Running post-setup operations..." Cyan
 $operations = $conf["Global"].Post
 Set-Regvalue $registryKey "NextOperation.Global" 0
-runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars
+_runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars
 
 # =========================================================================== #
 # ======================== End: Setup-Sequence loop ========================= #

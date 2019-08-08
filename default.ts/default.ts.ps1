@@ -1,9 +1,9 @@
 
 #requires -Modules ACGCore
 
-. "$PSScriptRoot\Peel-PodFile.ps1"
-. "$PSScriptRoot\Verify-Assertions.ps1"
-. "$PSScriptRoot\Run-CAFSetup.ps1"
+. "$PSScriptRoot\_peelPodFile.ps1"
+. "$PSScriptRoot\_verifyAssertions.ps1"
+. "$PSScriptRoot\_runCAFSetup.ps1"
 
 # TODO: This should be a helper function
 $loadHiveConfigs = { # Closure to update the configuration with hive configurations
@@ -59,7 +59,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
         $pods = ls -Recurse $SetupRoot | ? { $_ -match "\.(vhd(x)?|rar|exe)$" }
         
         foreach ($pod in $pods) {
-            Peel-PodFile $pod
+            _peelPodFile $pod
         }
 
         $loadHiveConfigs | Run-Operation # All pods have been peeled, ready to look for hives!
@@ -72,7 +72,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
         
         if (Get-module Hyper-V -ListAvailable -ErrorAction SilentlyContinue) {
             
-            Run-CAFSetup $conf -SkipVMRearm:$SkipVMRearm
+            _runCAFSetup $conf -SkipVMRearm:$SkipVMRearm
 
         } else {
             shoutOut "Hyper-V is not installed, skipping..."
@@ -115,7 +115,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
     Name="VerifyStep"
     Caption="Checking if all assertions about the current setup are satisfied..."
     Block={
-        Verify-Assertions $conf
+        _verifyAssertions $conf
     }
 }
 @{ # This step will be repeated everytime the script is run.

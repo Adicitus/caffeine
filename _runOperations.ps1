@@ -47,9 +47,9 @@ time the script is run (for example by prepopulating the $conf variable with dyn
 So this function won't be used outside of caffeinate.ps1 for the forseeable future.
 #>
 
-. "$PSScriptRoot\Force-Interactive.ps1"
+. "$PSScriptRoot\_forceInteractive.ps1"
 
-function runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
+function _runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
     $shouldQuit = $false
     $shouldIncrement = $true
@@ -94,7 +94,7 @@ function runOperations($registryKey, $registryValue="NextOperation", $Operations
                 shoutOut "CAFForceInteractive operation." Cyan
                 shoutOut "Attempting to enter into an interactive user session." Cyan
 
-                $r = Force-Interactive $conf
+                $r = _forceInteractive $conf
 
                 if ($r) {
                     "Broke into interactive session and finished running there." | shoutOut -MsgType Success
