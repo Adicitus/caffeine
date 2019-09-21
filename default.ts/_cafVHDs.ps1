@@ -289,7 +289,9 @@ function _cafVHDs {
 
                 if ($caffeineDir = $vhdConfig.InstallCaffeineTo) {
                     shoutOut "Installing Caffeine at '$caffeineDir'..."
-                    cp $PSScriptRoot "$VHDMountDir\$caffeineDir" -Recurse
+                    $destPath = "$VHDMountDir\$caffeineDir"
+                    mkdir $destPath
+                    cp "$PSScriptRoot\..\*" $destPath -Recurse
                     $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
                     ('rm "$PSCommandPath";. "C:\{0}\Caffeinate.ps1"' -f $caffeineDir) | Out-File $installScript -Encoding utf8 -Force
                 }
