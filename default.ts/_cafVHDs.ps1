@@ -304,8 +304,8 @@ function _cafVHDs {
 
                         try {
 
-                            $src = Get-Module $_ -ListAvailable
-                            $srcpath = $m.Path | Split-Path -Parent
+                            $src = Get-Module $n -ListAvailable
+                            $srcpath = $src.Path | Split-Path -Parent
 
                             { robocopy $srcpath "$dstrootpath\$n" /S } | Run-Operation
 
