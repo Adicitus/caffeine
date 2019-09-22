@@ -294,6 +294,29 @@ function _cafVHDs {
                     cp "$PSScriptRoot\..\*" $destPath -Recurse
                     $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
                     ('rm "$PSCommandPath";. "C:\{0}\Caffeinate.ps1"' -f $caffeineDir) | Out-File $installScript -Encoding utf8 -Force
+
+                    shoutOut "Installing dependencies..."
+                    $dstrootpath = "{0}\PSmodules" -f $VHDMountDir
+
+                    "ShoutOut", "ACGCore" | % {
+                        $n = $_
+                        "Installing '{0}'..." -f $n | shoutOut
+
+                        try {
+
+                            $src = Get-Module $_ -ListAvailable
+                            $srcpath = $m.Path | Split-Path -Parent
+
+                            { robocopy $srcpath "$dstrootpath\$n" /S } | Run-Operation
+
+                            "Done!" | shoutOut -MsgType Success
+                        } catch {
+                            "Failed to install '{0}'!" -f $n | shoutOut -MsgType Error
+                            $_ | shoutOut
+                        }
+
+                    }
+
                 }
                 if ($jobFile = $vhdConfig.JobFile) {
                     shoutOut "Trying to include a job file... ('$jobFile')"
