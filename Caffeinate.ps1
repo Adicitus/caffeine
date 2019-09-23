@@ -20,10 +20,6 @@ key in the registry, and if that fails it then tries to use "C:\setup\setup.ini"
 The job file used by the script during it's first execution will will be used
 to populate the "HKLM\SOFTWARE\CAFSetup\JobFile" registry value.
 
-.PARAMETER ACGCoreDir
-A directory where files of the ACGCore module can be found. Files in this directory
-will be copied to the PSModulePath if not already on it.
-
 .PARAMETER LogFile
 Path to the log file where messages from this script should be written.
 
@@ -34,40 +30,9 @@ VMs need to be rearmed.
 #>
 param(
     $JobFile = $null,
-    $ACGCoreDir="$PSScriptroot\Common",
     $LogFile = "C:\CAFination.log",
     [Switch]$SkipVMRearm
 )
-
-# =========================================================================== #
-# ==================== Start: Bootstrapping the script ====================== #
-# =========================================================================== #
-
-$bootstrapLog = "{0}\bootstrap.{1:yyyyMMddhhmmss}.log" -f $PSScriptRoot,[datetime]::Now
-"Starting Caffeination.ps1..." >> $bootstrapLog
-"Starting Caffeine bootstrap..." >> $bootstrapLog
-
-if (-not (Get-Module "ACGCore" -ListAvailable -ea SilentlyContinue)) {
-    "ACGCore module not available, copying ACGCore files to PSModulePath..." >> $bootstrapLog
-    Copy-Item $ACGCoreDir "C:\Windows\System32\WindowsPowerShell\v1.0\Modules\ACGCore" -Recurse *>&1 >> $bootstrapLog
-}
-
-"Importing ACGCore..." >> $bootstrapLog
-Import-Module ACGCore  *>&1 >> $bootstrapLog
-if (-not (Get-Module ACGCore)) {
-    "Unable to import ACGCore module from PSModulePath!" >> $bootstrapLog
-    "Attempting to import from the given ACGCoreDir..." >> $bootstrapLog
-    Import-Module "$ACGCoreDir\ACGCore.psd1"
-}
-
-if (-not (Get-Command ShoutOut -ea SilentlyContinue)) {
-    "Unable to find the 'shoutOut' command! Quitting!" >> $bootstrapLog
-    return
-} else {
-    "'ShoutOut' is available, starting logging to '$LogFile'..." >> $bootstrapLog
-}
-
-"Caffeine bootstrap finished." >> $bootstrapLog
 
 # =========================================================================== #
 # ======================== Start: Main script body ========================== #
