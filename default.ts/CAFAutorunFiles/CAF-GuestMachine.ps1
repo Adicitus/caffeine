@@ -59,7 +59,7 @@ if ($licenses) {
             try {
                 if ($_ | gm "RearmSku") {
 
-                    if ( ($_.Description -like "*Operating System*") -and !$_.Description.Contains("Eval") ) {
+                    if ( ($_.Description -like "*Operating System*") -and !($_.Description -match "Eval") ) {
                         return
                     }
 
