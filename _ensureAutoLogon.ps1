@@ -2,12 +2,12 @@
 #requires -Modules ACGCore
 
 param(
-    $SetupFile,
+    $Setup,
     $TmpDir,
     $LogFile
 )
 
-$setup = Parse-ConfigFile $setupFile
+# $setup = Parse-ConfigFile $setupFile
 
 if ($autologon = $setup.'Credential-AutoLogin') {
     $templateFile = "$PSScriptRoot\templates\winlogon.tmplt.reg"

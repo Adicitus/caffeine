@@ -47,7 +47,9 @@ if (-not (Get-Module "ACGCore" -ListAvailable -ea SilentlyContinue)) {
 Import-Module ACGCore
 Set-ShoutOutDefaultLog $installLogFile
 
-& "$PSScriptRoot\_ensureAutoLogon.ps1" $SetupFile $tmpDir $installLogFile
+$setup = Parse-ConfigFile $SetupFile
+
+& "$PSScriptRoot\_ensureAutoLogon.ps1" $Setup $tmpDir $installLogFile
 
 $caffeineTaskName = "Start Caffeine"
 if ($oldTask = Get-ScheduledTask $caffeineTaskName) {

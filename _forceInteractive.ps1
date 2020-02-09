@@ -15,6 +15,10 @@ function _forceInteractive{
     shoutOut "Found these credentials:" Cyan
     shoutOut $credentials
 
+
+    $timeout = $false
+    $waitLimit = [timespan]::FromMinutes(5)
+    $waitStart = [datetime]::Now
     shoutOut "Looking for logged on users..." Cyan
     do {
         $interactiveSessions = gwmi -query "Select __PATH From Win32_LogonSession WHERE LogonType=2 OR LogonType=10 OR LogonType=11 OR LogonType=12 OR LogonType=13"
@@ -31,6 +35,15 @@ function _forceInteractive{
                 }
                 $r
             }
+        }
+
+        $duration = [datetime]::Now - $waitStart
+
+        if ($duration -gt $waitLimit) {
+            "Unable to find an active session to break into, trying to reset autologin and restarting." | shoutOut
+            if (!(Test-Path C:\Temp -PathType Container)) { mkdir C:\temp }
+            & "$PSScriptRoot\_ensureAutoLogon.ps1" $conf "C:\temp"
+            Restart-Computer
         }
     } while($users -eq $null)
     
