@@ -33,7 +33,8 @@ function _installCAFRegistry {
     
         $operations | % { $_ | Run-Operation } | Out-Null
         shoutOut "Done!" Green
-    
+
+<# Caffeine Autorun scheme is deprecated. See install.ps1.
         # The trigger script switches to a Powershell context and executes the Bootstrapper snippet, the bootstrapper
         # snippet then starts a new Powershell context that runs with elevated priviledges and calls the AutorunScript snippet.
         shoutOut "Setting up CAF Autorun..." Cyan
@@ -121,5 +122,6 @@ function _installCAFRegistry {
         }
 
         shoutOut "Caffeine Install Done!" Green
+#>
     }
 }
