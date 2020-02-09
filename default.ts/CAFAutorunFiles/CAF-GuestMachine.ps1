@@ -58,6 +58,11 @@ if ($licenses) {
                 
             try {
                 if ($_ | gm "RearmSku") {
+
+                    if ( ($_.Description -like "*Operating System*") -and !($_.Description -match "Eval") ) {
+                        return
+                    }
+
                     . $log ($_.ReArmSku() *>&1)
                     $rearmPerformed = $true
                 } else {

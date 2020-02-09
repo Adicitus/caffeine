@@ -20,10 +20,6 @@ key in the registry, and if that fails it then tries to use "C:\setup\setup.ini"
 The job file used by the script during it's first execution will will be used
 to populate the "HKLM\SOFTWARE\CAFSetup\JobFile" registry value.
 
-.PARAMETER ACGCoreDir
-A directory where files of the ACGCore module can be found. Files in this directory
-will be copied to the PSModulePath if not already on it.
-
 .PARAMETER LogFile
 Path to the log file where messages from this script should be written.
 

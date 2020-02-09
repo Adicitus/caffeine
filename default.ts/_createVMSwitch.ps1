@@ -64,7 +64,7 @@ Function _createVMSwitch{
                     { $CurSwitch |Set-VMSwitch -NetAdapterInterfaceDescription $adapter -AllowManagementOS $true} | Run-Operation
                 }
                 NAT {
-                    shoutOut "NAT switches are not implemented at this time! Defaulting to Internal." Yellow
+                    # NetNAT is configured in _configureNAT.ps1, just create an internal switch here.
                     { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Run-Operation
                 }
             }
@@ -138,6 +138,10 @@ Function _createVMSwitch{
             $adapter | Set-DnsClientServerAddress -ServerAddresses $DNSAddresses
             shoutOut "Done adding $_!" Green
         }
+    }
+
+    if ($conf.DNSDomain) {
+        $adapter | Set-DnsClient -ConnectionSpecificSuffix $conf.DNSDomain
     }
 
     if ($conf.DefaultGateway) {
