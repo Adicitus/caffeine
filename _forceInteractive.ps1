@@ -3,7 +3,7 @@
 function _forceInteractive{
     param(
         $conf,
-        [string]$command = "$PSScriptRoot\caffeinate.ps1"
+        [string]$command = "$PSScriptRoot\start.ps1"
     )
 
     if ([Environment]::UserInteractive) {
