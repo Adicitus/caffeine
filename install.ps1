@@ -59,9 +59,10 @@ if ($oldTask = Get-ScheduledTask $caffeineTaskName) {
 "Registering caffeine as a Scheduled Task ('{0}', AtStartup as SYSTEM)..." -f $caffeineTaskName >> $installLogFile
 $a = New-ScheduledTaskAction -Execute Powershell.exe -Argument "$caffeineRoot\start.ps1"
 $t = New-ScheduledTaskTrigger -AtStartup
+$s = New-ScheduledTaskSettingsSet -Priority 3 -AllowStartIfOnBatteries
 $p = New-ScheduledTaskPrincipal -UserId System -LogonType ServiceAccount
 
-$r = Register-ScheduledTask -TaskName $caffeineTaskName -Principal $p -Action $a -Trigger $t
+$r = Register-ScheduledTask -TaskName $caffeineTaskName -Principal $p -Action $a -Trigger $t -Settings $s
 
 $r | Out-string >> $installLogFile
 

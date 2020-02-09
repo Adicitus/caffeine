@@ -17,7 +17,7 @@ function _forceInteractive{
 
 
     $timeout = $false
-    $waitLimit = [timespan]::FromMinutes(5)
+    $waitLimit = [timespan]::FromMinutes(2)
     $waitStart = [datetime]::Now
     shoutOut "Looking for logged on users..." Cyan
     do {
