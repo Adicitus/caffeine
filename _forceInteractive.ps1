@@ -46,6 +46,7 @@ function _forceInteractive{
             if (!(Test-Path C:\Temp -PathType Container)) { mkdir C:\temp }
             & "$PSScriptRoot\_ensureAutoLogon.ps1" $conf "C:\temp"
             Restart-Computer
+            return
         }
     } while($users -eq $null)
     
