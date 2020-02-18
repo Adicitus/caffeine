@@ -45,7 +45,6 @@ if (-not (Get-Module "ACGCore" -ListAvailable -ea SilentlyContinue)) {
 }
 
 Import-Module ACGCore
-Set-ShoutOutDefaultLog $installLogFile
 
 $setup = Parse-ConfigFile $SetupFile
 
@@ -75,9 +74,9 @@ if ($r -is [Microsoft.Management.Infrastructure.CimInstance]) {
         $task | Out-string  >> $installLogFile
     }
 
-    "Installation finished. Quittting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now >> $installLogFile
+    "Installation finished. Quitting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now >> $installLogFile
 } else {
-    "Failed to install Caffeine as a task. Quitting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now >> $installLogFile
+    "Failed to install Caffeine as a task. Quiting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now >> $installLogFile
 }
 
 return
