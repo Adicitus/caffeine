@@ -1,5 +1,3 @@
-#requires -Modules ACGCore
-
 function _forceInteractive{
     param(
         $conf,
@@ -44,7 +42,7 @@ function _forceInteractive{
             $nextInstallStep = Query-RegValue HKLM\SOFTWARE\CAFSetup InstallStep
             Set-RegValue HKLM\SOFTWARE\CAFSetup InstallStep ($nextInstallStep - 1)
             if (!(Test-Path C:\Temp -PathType Container)) { mkdir C:\temp }
-            & "$PSScriptRoot\_ensureAutoLogon.ps1" $conf "C:\temp"
+            _ensureAutoLogon $conf "C:\temp"
             Restart-Computer
             return $true
         }
@@ -70,7 +68,7 @@ function _forceInteractive{
                 shoutOut $cred
                 # Just in case we find more than one session ID for a user:
                 foreach ($sessionID in @($sessionIDs)) {
-                    $r = & "$PSScriptRoot\bin\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $command *>&1
+                    $r = & "$PSScriptRoot\.assets\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $command *>&1
                     shoutOut "Result:" Cyan
                     shoutOut "'$r'"
 

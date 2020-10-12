@@ -1,6 +1,4 @@
 # _verifyHives.ps1
-#requires -Modules PSScheduledJob, ACGCore, ShoutOut
-
 <#
 .SYNOPSIS
 !WIP! Checks whether all installed hives have been mounted, and attempts to

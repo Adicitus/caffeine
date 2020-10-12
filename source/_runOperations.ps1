@@ -1,4 +1,3 @@
-#requires -Modules ACGCore
 
 <#
 .SYNOPSIS
@@ -46,8 +45,6 @@ time the script is run (for example by prepopulating the $conf variable with dyn
 
 So this function won't be used outside of caffeinate.ps1 for the forseeable future.
 #>
-
-. "$PSScriptRoot\_forceInteractive.ps1"
 
 function _runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
     $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
