@@ -9,22 +9,27 @@ function _forceInteractive{
         continue
     }
 
-    $credentials = $conf.Keys | ? { $_ -match "^Credential" } | % { $conf[$_] }
+    $credentials = $conf.Keys | Where-Object {
+        $_ -match "^Credential"
+    } | ForEach-Object {
+        $conf[$_]
+    }
     shoutOut "Found these credentials:" Cyan
     shoutOut $credentials
 
 
-    $timeout = $false
     $waitLimit = [timespan]::FromMinutes(2)
     $waitStart = [datetime]::Now
     shoutOut "Looking for logged on users..." Cyan
     do {
-        $interactiveSessions = gwmi -query "Select __PATH From Win32_LogonSession WHERE LogonType=2 OR LogonType=10 OR LogonType=11 OR LogonType=12 OR LogonType=13"
-        $users = $interactiveSessions | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} WHERE ResultClass=Win32_UserAccount" }
+        $interactiveSessions = Get-WmiObject -query "Select __PATH From Win32_LogonSession WHERE LogonType=2 OR LogonType=10 OR LogonType=11 OR LogonType=12 OR LogonType=13"
+        $users = $interactiveSessions | ForEach-Object {
+            Get-WmiObject -query "ASSOCIATORS OF {$($_.__PATH)} WHERE ResultClass=Win32_UserAccount"
+        }
         # We're only interested in users whose credential are available.
-        $users = $users | ? {
+        $users = $users | Where-Object {
             $u = $_
-            $credentials | ? {
+            $credentials | Where-Object {
                 $r = $_.Username -eq $u.Name
                 if ($_.Domain -and ($_.Domain -ne ".")) {
                     $r = $r -and ($u.Domain -eq $_.Domain)
@@ -46,16 +51,16 @@ function _forceInteractive{
             Restart-Computer
             return $true
         }
-    } while($users -eq $null)
+    } while($null -eq $users)
     
     shoutOut "Found these users:" Cyan
     shoutOut $users
 
     
     foreach ( $u in @($users)) {
-        $ss = gwmi -query "ASSOCIATORS OF {$($u.__PATH)} Where ResultClass=Win32_LogonSession" | ? { $_.LogonType -in 2,10,11,12,13 }
-        $ps = $ss | % { gwmi -query "ASSOCIATORS OF {$($_.__PATH)} where ResultClass=Win32_Process" }
-        $sessionIDs = $ps | % { $_.SessionID } | Sort-Object -Unique
+        $ss = Get-WmiObject -query "ASSOCIATORS OF {$($u.__PATH)} Where ResultClass=Win32_LogonSession" | Where-Object { $_.LogonType -in 2,10,11,12,13 }
+        $ps = $ss | ForEach-Object { Get-WmiObject -query "ASSOCIATORS OF {$($_.__PATH)} where ResultClass=Win32_Process" }
+        $sessionIDs = $ps | ForEach-Object { $_.SessionID } | Sort-Object -Unique
 
         foreach($cred in @($credentials)) {
             $k = if ((-not $cred.Domain) -or ($cred.Domain -eq ".")) {

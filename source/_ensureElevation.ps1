@@ -14,7 +14,7 @@ function _ensureElevation {
     $caller = $callStack[1]
 
     if (!$isAdmin) {
-        $args = @{
+        $elevationArgs = @{
             Verb="RunAs"
         }
 
@@ -23,7 +23,7 @@ function _ensureElevation {
         }
 
         try {
-            $proc = Start-Process Powershell @args -PassThru
+            $proc = Start-Process Powershell @elevationArgs -PassThru
             if ($logFile) { "Started a new Powershell session as Admin" >> $logFile }
             return $proc
         } catch {
