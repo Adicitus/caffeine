@@ -47,7 +47,10 @@ So this function won't be used outside of caffeinate.ps1 for the forseeable futu
 #>
 
 function _runOperations($registryKey, $registryValue="NextOperation", $Operations, $Conf, $Vars=@{}) {
-    $Operations = $Operations |? { $_ -ne $null } # Sanitize the input.
+    # Sanitize the input.
+    $Operations = $Operations | Where-Object {
+        $_ -ne $null
+    }
     $shouldQuit = $false
     $shouldIncrement = $true
 
@@ -71,7 +74,7 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
 
     $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
 
-    if ($OperationN -eq $null) {
+    if ($null -eq $OperationN) {
         $OperationN = 0
         Set-Regvalue $registryKey $registryValue $OperationN | Out-Null
     }

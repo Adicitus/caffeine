@@ -21,24 +21,26 @@ function _verifyHives {
 
     shoutOut "Verifying that all installed hives have been mounted..."
 
-    $userDirs = ls "C:\Users"
+    $userDirs = Get-ChildItem "C:\Users"
 
-    $userDirs | % {
+    $userDirs | ForEach-Object {
         $path = "{0}\AppData\Local\Microsoft\Windows\PowerShell\ScheduledJobs" -f $_.FullName
         if ((Test-Path $path)) {
             "Found a ScheduledJobs directory under '{0}'." -f $_.Name | ShoutOut
             "Collecting ScheduledJobs..." | ShoutOut
-            ls $path | %  {
+            Get-ChildItem $path | ForEach-Object  {
                 "Found '{0}'." -f $_.Name | ShoutOut
                 @{ Name=$_.Name; Path= $path }
             }
         }
-    } | ? {
+    } | Where-Object {
         $_.Name -match "^MountHive\((?<hivename>.+)\)$"
-    } | % {
+    } | ForEach-Object {
         "Loading '{0}'..." -f $_.Name | ShoutOut
         $def = [Microsoft.PowerShell.ScheduledJob.ScheduledJobDefinition]::LoadFromStore($_.Name, $_.Path)
-        $vhdPath = $def.InvocationInfo.Parameters[0] | ? { $_.Name -eq "ArgumentList" } | % Value | Select -First 1
+        $vhdPath = $def.InvocationInfo.Parameters[0] | Where-Object {
+            $_.Name -eq "ArgumentList"
+        } | ForEach-Object Value | Select-Object -First 1
         "VHD located @ '{0}'." -f $vhdPath | shoutOut
 
         if ($vhd = Get-VHD $vhdPath -ErrorAction SilentlyContinue) {
