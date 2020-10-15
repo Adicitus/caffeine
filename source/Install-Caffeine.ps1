@@ -22,8 +22,6 @@ function Install-Caffeine {
         [Switch]$StartImmediately
     )
 
-    $caffeineRoot = "$PSScriptRoot"
-
     $elevationResult = _ensureElevation
 
     if ($elevationResult -ne $true) {

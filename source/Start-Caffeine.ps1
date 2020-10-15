@@ -18,18 +18,12 @@ to populate the "HKLM\SOFTWARE\CAFSetup\JobFile" registry value.
 
 .PARAMETER LogFile
 Path to the log file where messages from this script should be written.
-
-.PARAMETER SkipActiveRearm
-Flag used to skip the costly process of trying to rearm any VMs included in the
-setup. This flag is usually not used, since Run-CAFSetup should determine which
-VMs need to be rearmed.
 #>
 
 function Start-Caffeine {
     param(
         $JobFile = $null,
-        $LogFile = "C:\CAFination.log",
-        [Switch]$SkipVMRearm
+        $LogFile = "C:\CAFination.log"
     )
 
     # =========================================================================== #
@@ -92,9 +86,9 @@ function Start-Caffeine {
     "Using task sequence defined in '{0}'..." -f $tsf | shoutOut -Foreground Cyan
     $installSteps = New-Object System.Collections.ArrayList
     $n = 0
-    . $tsf | ? { 
+    . $tsf | Where-Object { 
         $_ -is [hashtable]
-    } | % {
+    } | ForEach-Object {
         "Registering step '{0}' ('{1}') as step {2}..." -f $_.Name, $_.caption, $n++ | shoutOut
         $installSteps.add($_) | Out-Null
     }
@@ -122,7 +116,7 @@ function Start-Caffeine {
         ShoutOut ("=" * 80) cyan
         
         shoutOut "Running PRE operations..." Cyan
-        $operations = "Pre", "Operation" | % { $conf[$step.Name].$_ }
+        $operations = "Pre", "Operation" | ForEach-Object { $conf[$step.Name].$_ }
         $shouldQuit = _runOperations $registryKey "NextOperation" $operations $conf $OperationVars
         shoutOut $shouldQuit
         if ($shouldQuit) {
