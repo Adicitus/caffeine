@@ -25,20 +25,20 @@ function _runCAFSetup {
         return
     }
 
-    $networks = $Configuration.Keys | ? { $_ -match "^Network" } 
+    $networks = $Configuration.Keys | Where-Object { $_ -match "^Network" } 
 
     shoutOut "Configuring VMSwitches..." Cyan
-    $networks | % {
+    $networks | ForEach-Object {
         _createVMSwitch $_ $Configuration[$_]
     }
 
     ShoutOUt "Configuring NAT..."
     _configureNAT $Configuration
 
-    if ($VMFolders = @($conf.HyperVStep.VMPath) + @($conf.Global.VMPath) | ? { $_ }) {
+    if ($VMFolders = @($conf.HyperVStep.VMPath) + @($conf.Global.VMPath) | Where-Object { $_ }) {
         shoutOut "CAFing VMs in '$( $VMFolders -join ", " ) '"
-        $ExcludePaths = @($conf.HyperVStep.VMPathExclude) + @($conf.Global.VMPathExclude) | ? { $_ }
+        $ExcludePaths = @($conf.HyperVStep.VMPathExclude) + @($conf.Global.VMPathExclude) | Where-Object { $_ }
         
-        _cafVMs -VMFolders $VMFolders -Configuration $Configuration -ExcludePaths $ExcludePaths -NoRearm:$SkipVMRearm
+        _cafVMs -VMFolders $VMFolders -Configuration $Configuration -ExcludePaths $ExcludePaths -SkipRearm:$SkipVMRearm
     }
 }

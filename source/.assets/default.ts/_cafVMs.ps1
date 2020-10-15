@@ -7,14 +7,14 @@
 function _cafVMs {
     param(
         [parameter(Mandatory=$false, Position=1)]$VMFolders='C:\Program Files\Microsoft Learning',
-        [parameter(Mandatory=$false, position=2)]$Configuration = @{  },
+        [parameter(Mandatory=$false, position=2)]$Configuration = @{},
         [parameter(Mandatory=$false, Position=3)]$ExcludePaths = @(),
-        [Switch]$NoRearm
+        [Switch]$SkipRearm
     )
 
 
     shoutOut "VMPaths:"
-    $VMFolders | % { "'$_'" } | shoutOut
+    $VMFolders | ForEach-Object { "'$_'" } | shoutOut
 
     shoutOut "Rebasing VHDs to ensure that all chains are complete..."
     Rebase-VHDFiles $VMFolders
@@ -24,32 +24,42 @@ function _cafVMs {
 
     shoutOut "Creating VHD lookup table..."
     $VHDRecordLookup = @{}
-    $VHDRecords | % {
+    $VHDRecords | ForEach-Object {
         $VHDRecordLookup[$_.File] = $_
     }
     shoutOut "Done!" Success
      
     shoutOut "Collecting VM files..."
-    $t = ls -Recurse $VMFolders | ? { $_.FullName -match ".*[\\/]Virtual Machines[\\/].+\.(exp|vmcx|xml)$" }
-    $t = $t | ? { $p = $_.FullName; -not ($excludePaths | ? { $p -like $_ }) }
+    $t = Get-ChildItem -Recurse $VMFolders | Where-Object {
+        $_.FullName -match ".*[\\/]Virtual Machines[\\/].+\.(exp|vmcx|xml)$"
+    }
+    $t = $t | Where-Object {
+        $p = $_.FullName;
+        -not ($excludePaths | Where-Object { $p -like $_ })
+    }
     shoutOut ("Found {0} files..." -f @($t).Count)
-    $VMFiles = $t | Sort -Property FullName | Get-Unique
+    $VMFiles = $t | Sort-Object -Property FullName | Get-Unique
     shoutOut ("{0} non-duplicates..." -f @($VMFiles).Count)
 
     shoutOut "Done!" Success
 
-    shoutOut "Collected $($vmfiles.Count) VM files..."
+    "Collected {0} VM files..." -f $vmfiles.Count | shoutOut
 
     if ($Configuration["CAF-VMs"].NoImport) {
         shoutOut "Checking against exclusion paths..."
         $exclusionList = @($Configuration["CAF-VMs"].NoImport)
-        $vmfiles = $vmfiles | ? { $f = $_.FullName; !( $exclusionList | ? { $f -like "$_*" }  ) }
+        $vmfiles = $vmfiles | Where-Object {
+            $f = $_.FullName;
+            !( $exclusionList | Where-Object {
+                $f -like "$_*"
+            })
+        }
         shoutOut " Done!" Green
-        shoutOut "Kept $($vmfiles.Count) VM files..."
+        "Kept {0} VM files..." -f $vmfiles.Count | shoutOut
     }
 
     shoutOut "Checking for incompatibilities..."
-    $compatibilityReports = $vmfiles | % {
+    $compatibilityReports = $vmfiles | ForEach-Object {
         $file = $_.FullName
 
         $r = { Compare-VM -Path $file -ErrorAction Stop } | Run-Operation
@@ -68,68 +78,83 @@ function _cafVMs {
                     shoutOut $r
                 }
             }
-        } else { return $r }
+        } else {
+            return $r
+        }
     }
-    $compatibilityReports | ? { $_.Incompatibilities } | % { 
-        shoutOut "Incompatibilities for '$($_.Path)' ('$($_.VM.VMName)'):"
-        $_.Incompatibilities | % {
+
+    $compatibilityReports | Where-Object {
+        $_.Incompatibilities
+    } | ForEach-Object {
+        "Incompatibilities for '{0}' ('{1}'):" -f $_.Path, $_.VM.VMName | shoutOut
+        $_.Incompatibilities | ForEach-Object {
             shoutOut ("{0,-15} {1}" -f "$($_.Source)':",$_.Message) Error
         }
     }
     shoutOut "Done!" Success
 
     shoutOut "Importing any unimported compatible VMs..."
-    $r = $compatibilityReports | ? { !$_.Incompatibilities } | % {
-        shoutOut "Importing '$($_.Path)' ('$($_.VM.VMName)')..."; $_
-    } | % { { Import-VM -Path $_.Path } | Run-Operation }
-    
+    $r = $compatibilityReports | Where-Object {
+        !$_.Incompatibilities
+    } | ForEach-Object {
+        shoutOut "Importing '$($_.Path)' ('$($_.VM.VMName)')..."
+        $_
+    } | ForEach-Object {
+        { Import-VM -Path $_.Path } | Run-Operation
+    }
     shoutout "Done!" Success
 
     shoutOut "Checking which machines need to be rearmed..."
     $vms = Get-VM
     
-    $VMsToRearm = $vms | % {
-        shoutOut ("{0}..." -f $_.VMName) -NoNewline
-        $_
-    } | ? {
-        $VMName = $_.VMName
-        # Check if the VM should be rearmed
-        $r1 = ($Configuration["CAF-VMs"].NoRearm | ? { $_ -and ($VMName -match $_) }) -ne $null
-        $r2 = ($Configuration["CAF-VMs"].Rearm   | ? { $_ -and ($VMName -match $_) }) -ne $null
-        $NoRearm = ( $r1 -and !$r2 )
 
-        if ($NoRearm) {
-            shoutOut "Is marked as 'NoRearm'." 
-        }
+    if (!$SkipRearm) {
 
-        return !$NoRearm
-    } | ? {
-        # Check if the VM has at least one disk containing a Windows installation:
-        $disks = $_ | Get-VMHardDiskDrive
-        foreach ($disk in $disks) {
-            if ($record = $VHDRecordLookup[$disk.Path]) {
-                if ( $record.ContainsKey("WindowsEdition") ) {
-                    return $true
+        $VMsToRearm = $vms | ForEach-Object {
+            shoutOut ("{0}..." -f $_.VMName) -NoNewline
+            $_
+        } | Where-Object {
+            $VMName = $_.VMName
+            # Check if the VM should be rearmed
+            $r1 = $null -ne ($Configuration["CAF-VMs"].NoRearm | Where-Object {
+                $_ -and ($VMName -match $_)
+            })
+            $r2 = $null -ne ($Configuration["CAF-VMs"].Rearm   | Where-Object {
+                $_ -and ($VMName -match $_)
+            })
+            $NoRearm = ( $r1 -and !$r2 )
+
+            if ($NoRearm) {
+                shoutOut "Is marked as 'NoRearm'." 
+            }
+
+            return !$NoRearm
+        } | Where-Object {
+            # Check if the VM has at least one disk containing a Windows installation:
+            $disks = $_ | Get-VMHardDiskDrive
+            foreach ($disk in $disks) {
+                if ($record = $VHDRecordLookup[$disk.Path]) {
+                    if ( $record.ContainsKey("WindowsEdition") ) {
+                        return $true
+                    }
                 }
             }
+            shoutOut "Does not have a known Windows installation." Warning
+            return $false
+        } | ForEach-Object {
+            shoutOut "Needs rearm!" Warning
+            $_
         }
-        shoutOut "Does not have a known Windows installation." Warning
-        return $false
-    } | % {
-        shoutOut "Needs rearm!" Warning
-        $_
-    }
 
-    if (!$NoRearm) {
         if ($VMsToRearm -and ($VMsToRearm.Count -gt 0)) {
-            shoutOUt "Rearming $( ($VMsToRearm | % { $_.VMName }) -join ", " )"
+            "Rearming {0}" -f ( ($VMsToRearm | ForEach-Object { $_.VMName }) -join ", " ) | shoutOut
             _rearmVMs $VMsToRearm $Configuration
         } else {
             shoutOut "No VMs need to be rearmed."
         }
     }
 
-    Get-VM | % {
+    Get-VM | ForEach-Object {
         $vm = $_
 
         if (!($vm | Get-VMSnapshot)) {
