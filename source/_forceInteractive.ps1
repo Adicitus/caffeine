@@ -5,7 +5,7 @@ function _forceInteractive{
     )
 
     if ([Environment]::UserInteractive) {
-        shoutOut "Already in an interactive session." Cyan
+        shoutOut "Already in an interactive session."
         continue
     }
 
@@ -14,13 +14,13 @@ function _forceInteractive{
     } | ForEach-Object {
         $conf[$_]
     }
-    shoutOut "Found these credentials:" Cyan
+    shoutOut "Found these credentials:"
     shoutOut $credentials
 
 
     $waitLimit = [timespan]::FromMinutes(2)
     $waitStart = [datetime]::Now
-    shoutOut "Looking for logged on users..." Cyan
+    shoutOut "Looking for logged on users..."
     do {
         $interactiveSessions = Get-WmiObject -query "Select __PATH From Win32_LogonSession WHERE LogonType=2 OR LogonType=10 OR LogonType=11 OR LogonType=12 OR LogonType=13"
         $users = $interactiveSessions | ForEach-Object {
@@ -53,7 +53,7 @@ function _forceInteractive{
         }
     } while($null -eq $users)
     
-    shoutOut "Found these users:" Cyan
+    shoutOut "Found these users:"
     shoutOut $users
 
     
@@ -69,12 +69,12 @@ function _forceInteractive{
                     "$($cred.Domain)\$($cred.Username)"
                 }
             if ($u.Caption -eq $k) {
-                shoutOut "Trying these credentials:" Cyan
+                shoutOut "Trying these credentials:"
                 shoutOut $cred
                 # Just in case we find more than one session ID for a user:
                 foreach ($sessionID in @($sessionIDs)) {
                     $r = & "$PSScriptRoot\.assets\PSExec\PSExec.exe" "\\${env:COMPUTERNAME}" -u $u.Caption -p $cred.Password -i $sessionID -h -accepteula powershell -WindowStyle Max -Command . $command *>&1
-                    shoutOut "Result:" Cyan
+                    shoutOut "Result:"
                     shoutOut "'$r'"
 
                     if ($r -match "Error Code 0") {
