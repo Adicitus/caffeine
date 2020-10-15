@@ -53,7 +53,7 @@ function _cafVHDs {
                 Timezone    ="W. Europe Standard Time"
             }
         },
-        $AutorunFiles = (ls "$PSScriptRoot\CAFAutorunFiles\*" | % { $_.FullName }),
+        $AutorunFiles = (Get-ChildItem "$PSScriptRoot\CAFAutorunFiles\*" | ForEach-Object { $_.FullName }),
         $ExcludePaths = @(),
         $VHDMountDir = $null,
         $SymlinkDir = "C:\"
@@ -68,19 +68,19 @@ function _cafVHDs {
 
     $CAFStartTime = Get-Date
 
-    $VMFolders = $VMFolders | % { if ($_ -notmatch "[\\/]$") { "$_\" } else { $_ } }
+    $VMFolders = $VMFolders | ForEach-Object { if ($_ -notmatch "[\\/]$") { "$_\" } else { $_ } }
     if ($SymlinkDir -notmatch "[\\/]$") { $SymlinkDir += "\" }
     
     shoutOut "Running as '$($Env:USERNAME)'..."
 
     shoutOut "Initializing VHD records..." Cyan
-    $t = $VMFolders | ls -Recurse -File | ? { $_.Name -match "\.(a)?vhd(x)?$" }
-    $t = $t | ? { $p = $_.FullName; -not ($excludePaths | ? { $p -like $_ }) }
+    $t = $VMFolders | Get-ChildItem -Recurse -File | Where-Object { $_.Name -match "\.(a)?vhd(x)?$" }
+    $t = $t | Where-Object { $p = $_.FullName; -not ($excludePaths | Where-Object { $p -like $_ }) }
     shoutOut ("Found {0} VHD files..." -f @($t).Count)
-    $VHDFiles = $t |Sort -Property FullName | Get-Unique
+    $VHDFiles = $t | Sort-Object -Property FullName | Get-Unique
     shoutOut ("{0} non-duplicates..." -f @($VHDFiles).Count)
 
-    $VHDRecords = $VHDFiles | % {
+    $VHDRecords = $VHDFiles | ForEach-Object {
         $r = @{
             File=$_.FullName
             FileItem=$_
@@ -97,7 +97,7 @@ function _cafVHDs {
     shoutOut "Discovering parent relationships..." Cyan
     foreach ($record in $VHDRecords) {
         if ($record.VHD.ParentPath) {
-            $parentRecord = $VHDRecords | ? { $_.File -eq $record.VHD.ParentPath }
+            $parentRecord = $VHDRecords | Where-Object { $_.File -eq $record.VHD.ParentPath }
             if ($parentRecord) {
                 shoutOut "'$($parentrecord.File)' is parent of '$($record.File)'" White
                 $parentRecord.IsParent = $true
@@ -110,7 +110,7 @@ function _cafVHDs {
 
     
     shoutOut "Identifying VHDs with Windows system volumes..." Cyan
-    $VHDRecords | % {
+    $VHDRecords | ForEach-Object {
         shoutOut "Checking " Cyan -NoNewline
         shoutOut "$($_.File)" Gray
         if ($_.IsParent) { 
@@ -165,7 +165,7 @@ function _cafVHDs {
 
         if ($UsingSymlink) {
             shoutout "Removing symlink... " Cyan -NoNewline
-            rm $VHDfile
+            Remove-Item $VHDfile
             shoutOut "Done!" Green
         }
     }
@@ -184,7 +184,7 @@ function _cafVHDs {
     }
     
     shoutOut "Analyzing and fixing the offline images..." Cyan
-    $VHDRecords | % {
+    $VHDRecords | ForEach-Object {
         
         $record  = $_
 
@@ -212,7 +212,7 @@ function _cafVHDs {
 
         $partitions = $disk | Get-Partition
 
-        $partitions | % {
+        $partitions | ForEach-Object {
 
             #-----------------------------------------------------------------#
             #                         Start of Analysis                       #
@@ -250,7 +250,7 @@ function _cafVHDs {
             #                          End of Analysis                        #
             #-----------------------------------------------------------------#
 
-            if (($noFixPaths | ? { $record.File -like "$_*" }) -and !($fixPaths | ? { $record.File -like "$_*" })) {
+            if (($noFixPaths | Where-Object { $record.File -like "$_*" }) -and !($fixPaths | Where-Object { $record.File -like "$_*" })) {
                 shoutOut ("'{0}' is in a path marked NoFix, skipping..." -f $record.File)
                 return
             }
@@ -269,13 +269,13 @@ function _cafVHDs {
 
             }
 
-            if ($fs = ls "$VHDMountDir\CAFAutorun\*" ) {
+            if ($fs = Get-ChildItem "$VHDMountDir\CAFAutorun\*" ) {
                 shoutOut "Clearing out the CAFAutorun folder..." Cyan
-                $fs | rm -Recurse -Force
+                $fs | Remove-Item -Recurse -Force
                 shoutOut "Done!" Green
             }
             shoutOut "Populating the CAFAutorun folder..."
-            $AutorunFiles | % {
+            $AutorunFiles | ForEach-Object {
                 if (!(Test-Path $_)) {
                     shoutOut "Missing source file: '$_'" Red
                     return
@@ -291,14 +291,14 @@ function _cafVHDs {
                     shoutOut "Installing Caffeine at '$caffeineDir'..."
                     $destPath = "$VHDMountDir\$caffeineDir"
                     mkdir $destPath
-                    cp "$PSScriptRoot\..\*" $destPath -Recurse
+                    Copy-Item "$PSScriptRoot\..\*" $destPath -Recurse
                     $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
                     ('rm "$PSCommandPath";. "C:\{0}\Caffeinate.ps1"' -f $caffeineDir) | Out-File $installScript -Encoding utf8 -Force
 
                     shoutOut "Installing dependencies..."
                     $dstrootpath = "{0}\PSmodules" -f $VHDMountDir
 
-                    "ShoutOut", "ACGCore" | % {
+                    "ShoutOut", "ACGCore" | ForEach-Object {
                         $n = $_
                         "Installing '{0}'..." -f $n | shoutOut
 
@@ -324,7 +324,7 @@ function _cafVHDs {
                     Run-Operation { reg load $rmp "$VHDMountDir\Windows\System32\Config\SYSTEM" }
 
                     $envKey = "$rmp\ControlSet001\Control\Session Manager\Environment" -replace "HKLM", "HKLM:"
-                    $curpsmpstr = { Get-ItemProperty $envKey PSModulePath | % PSModulePath } | Run-Operation
+                    $curpsmpstr = { Get-ItemProperty $envKey PSModulePath | ForEach-Object PSModulePath } | Run-Operation
 
                     if (!$curpsmpstr.contains($psmdir)) {
                         $curpsmp = $curpsmpstr -split ";"
@@ -338,6 +338,7 @@ function _cafVHDs {
                     Run-Operation { reg unload $rmp }
 
                 }
+
                 if ($jobFile = $vhdConfig.JobFile) {
                     shoutOut "Trying to include a job file... ('$jobFile')"
                     if ( Test-Path $jobFile ) {
@@ -349,11 +350,12 @@ function _cafVHDs {
                             mkdir $jobFileDestDir
                         }
 
-                        cp $jobFile $jobFileDest
+                        Copy-Item $jobFile $jobFileDest
                     } else {
                         shoutOut "Unable to find the desired job file!" Red
                     }
                 }
+
                 if (($alu = $vhdConfig.AutoLoginUser) -and ($alp = $vhdConfig.AutoLoginPassword)) {
                     if ( !($ald = $vhdConfig.AutoLoginDomain ) ) {
                         $ald = $null
@@ -367,13 +369,14 @@ function _cafVHDs {
                     Run-Operation { reg add $winlogon /v AutoLogonCount /t REG_DWORD /d 9999 /f }
                     Run-Operation { reg add $winlogon /v DefaultPassword /t REG_SZ /d 1 /f }
                     Run-Operation { reg add $winlogon /v DefaultUserName /t REG_SZ /d $alu /f }
-                    if ( $ald -ne $null) {
+                    if ($null -ne $ald) {
                         Run-Operation { reg add $winlogon /v DefaultDomainName /t REG_SZ /d $ald /f }
                     }
                     Run-Operation { reg add $winlogon /v DefaultPassword /t REG_SZ /d $alp /f }
 
                     Run-Operation { reg unload $rmp }
                 }
+
             }
 
             $localeNameRegex = "[a-z]{2}-[a-z]{2}"
@@ -425,7 +428,7 @@ function _cafVHDs {
         }
 
         $r = { $currentVHD | Dismount-VHD } | Run-Operation
-        if (($r | ? { $_ -is [System.Management.Automation.ErrorRecord] })) {
+        if (($r | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })) {
             shoutOut "Failed to dismount the VHD!" Red
             $_.UnmountError = $r
             shoutOut $r

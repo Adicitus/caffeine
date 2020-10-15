@@ -13,42 +13,42 @@ function _cafVMs {
     )
 
 
-    shoutOut "VMPaths:" Cyan
+    shoutOut "VMPaths:"
     $VMFolders | % { "'$_'" } | shoutOut
 
-    shoutOut "Rebasing VHDs to ensure that all chains are complete..." Cyan
+    shoutOut "Rebasing VHDs to ensure that all chains are complete..."
     Rebase-VHDFiles $VMFolders
 
-    shoutOut "Inventorying VHDs..." Cyan
-    $autorunFiles = @( (ls "$PSScriptRoot\CAFAutorunFiles\*" | % { $_.FullName }) )
-    $VHDRecords = _cafVHDs $VMFolders -Configuration $Configuration -AutorunFiles $autorunFiles -ExcludePaths $ExcludePaths
+    shoutOut "Inventorying VHDs..."
+    $VHDRecords = _cafVHDs $VMFolders -Configuration $Configuration -ExcludePaths $ExcludePaths
 
-    shoutOut "Creating VHD lookup table..." Cyan
+    shoutOut "Creating VHD lookup table..."
     $VHDRecordLookup = @{}
     $VHDRecords | % {
         $VHDRecordLookup[$_.File] = $_
     }
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
      
-    shoutOut "Collecting VM files..." Cyan
+    shoutOut "Collecting VM files..."
     $t = ls -Recurse $VMFolders | ? { $_.FullName -match ".*[\\/]Virtual Machines[\\/].+\.(exp|vmcx|xml)$" }
     $t = $t | ? { $p = $_.FullName; -not ($excludePaths | ? { $p -like $_ }) }
     shoutOut ("Found {0} files..." -f @($t).Count)
     $VMFiles = $t | Sort -Property FullName | Get-Unique
     shoutOut ("{0} non-duplicates..." -f @($VMFiles).Count)
 
-    shoutOut "Done!" Green
-    shoutOut "Collected $($vmfiles.Count) VM files..." Cyan
+    shoutOut "Done!" Success
+
+    shoutOut "Collected $($vmfiles.Count) VM files..."
 
     if ($Configuration["CAF-VMs"].NoImport) {
         shoutOut "Checking against exclusion paths..."
         $exclusionList = @($Configuration["CAF-VMs"].NoImport)
         $vmfiles = $vmfiles | ? { $f = $_.FullName; !( $exclusionList | ? { $f -like "$_*" }  ) }
         shoutOut " Done!" Green
-        shoutOut "Kept $($vmfiles.Count) VM files..." Cyan
+        shoutOut "Kept $($vmfiles.Count) VM files..."
     }
 
-    shoutOut "Checking for incompatibilities..." Cyan
+    shoutOut "Checking for incompatibilities..."
     $compatibilityReports = $vmfiles | % {
         $file = $_.FullName
 
@@ -56,36 +56,36 @@ function _cafVMs {
         if ($r -is [System.Management.Automation.ErrorRecord]) {
             switch -Wildcard ($r) {
                 "*Identifier already exists.*" {
-                    shoutOut "'$file' belongs to an already imported VM!" Green
+                    shoutOut "'$file' belongs to an already imported VM!" Success
                     break
                 }
                 "*Object is in use*" {
-                    shoutOut "'$file' seems to belong to aleady imported VM" Yellow
+                    shoutOut "'$file' seems to belong to aleady imported VM" Warning
                     break
                 }
                 default {
-                    shoutOut "An unknown error occured when trying to inspect '$file':" Red
-                    shoutOut $r Red
+                    shoutOut "An unknown error occured when trying to inspect '$file':" Error
+                    shoutOut $r
                 }
             }
         } else { return $r }
     }
     $compatibilityReports | ? { $_.Incompatibilities } | % { 
-        shoutOut "Incompatibilities for '$($_.Path)' ('$($_.VM.VMName)'):" Cyan
+        shoutOut "Incompatibilities for '$($_.Path)' ('$($_.VM.VMName)'):"
         $_.Incompatibilities | % {
-            shoutOut ("{0,-15} {1}" -f "$($_.Source)':",$_.Message) Red
+            shoutOut ("{0,-15} {1}" -f "$($_.Source)':",$_.Message) Error
         }
     }
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 
-    shoutOut "Importing any unimported compatible VMs..." Cyan
+    shoutOut "Importing any unimported compatible VMs..."
     $r = $compatibilityReports | ? { !$_.Incompatibilities } | % {
         shoutOut "Importing '$($_.Path)' ('$($_.VM.VMName)')..."; $_
     } | % { { Import-VM -Path $_.Path } | Run-Operation }
     
-    shoutout "Done!" Green
+    shoutout "Done!" Success
 
-    shoutOut "Checking which machines need to be rearmed..." Cyan
+    shoutOut "Checking which machines need to be rearmed..."
     $vms = Get-VM
     
     $VMsToRearm = $vms | % {
@@ -99,7 +99,7 @@ function _cafVMs {
         $NoRearm = ( $r1 -and !$r2 )
 
         if ($NoRearm) {
-            shoutOut "Is marked as 'NoRearm'."  Green
+            shoutOut "Is marked as 'NoRearm'." 
         }
 
         return !$NoRearm
@@ -113,10 +113,10 @@ function _cafVMs {
                 }
             }
         }
-        shoutOut "Does not have a known Windows installation." Yellow
+        shoutOut "Does not have a known Windows installation." Warning
         return $false
     } | % {
-        shoutOut "Needs rearm!" Red
+        shoutOut "Needs rearm!" Warning
         $_
     }
 
@@ -135,7 +135,7 @@ function _cafVMs {
         if (!($vm | Get-VMSnapshot)) {
             shoutOut "Adding a snapshot to '$($vm.VMName)'..."
             { $vm | Checkpoint-VM -SnapshotName "Initial Snapshot" } | Run-Operation | Out-Null
-            shoutOut "Done!" Green
+            shoutOut "Done!" Success
         }
     }
 }
