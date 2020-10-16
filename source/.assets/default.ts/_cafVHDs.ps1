@@ -287,67 +287,60 @@ function _cafVHDs {
 
             if ($vhdConfig = $Configuration[$record.FileItem.Name]) {
 
-                if ($caffeineDir = $vhdConfig.InstallCaffeineTo) {
-                    shoutOut "Installing Caffeine at '$caffeineDir'..."
-                    $destPath = "$VHDMountDir\$caffeineDir"
-                    mkdir $destPath
-                    Copy-Item "$PSScriptRoot\..\*" $destPath -Recurse
-                    $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
-                    ('rm "$PSCommandPath";. "C:\{0}\Caffeinate.ps1"' -f $caffeineDir) | Out-File $installScript -Encoding utf8 -Force
+                $installScript = "$VHDMountDir\CAFAutorun\Install-Caffeine.ps1"
+                'rm "$PSCommandPath"; Install-Caffeine -StartImmediately' | Out-File $installScript -Encoding utf8 -Force
 
-                    shoutOut "Installing dependencies..."
-                    $dstrootpath = "{0}\PSmodules" -f $VHDMountDir
+                $dstrootpath = "{0}\PSmodules" -f $VHDMountDir
+                
+                "Installing modules to '{0}'..." -f $dstrootpath | shoutOut
 
-                    "ShoutOut", "ACGCore" | ForEach-Object {
-                        $n = $_
-                        "Installing '{0}'..." -f $n | shoutOut
+                "Caffeine", "ShoutOut", "ACGCore" | ForEach-Object {
+                    $n = $_
+                    "Installing '{0}'..." -f $n | shoutOut
 
-                        try {
+                    try {
 
-                            $src = Get-Module $n -ListAvailable
-                            $srcpath = $src.Path | Split-Path -Parent
+                        $src = Get-Module $n -ListAvailable
+                        $srcpath = $src.Path | Split-Path -Parent
 
-                            { robocopy $srcpath "$dstrootpath\$n" /S } | Run-Operation
+                        { robocopy $srcpath "$dstrootpath\$n" /S } | Run-Operation
 
-                            "Done!" | shoutOut -MsgType Success
-                        } catch {
-                            "Failed to install '{0}'!" -f $n | shoutOut -MsgType Error
-                            $_ | shoutOut
-                        }
-
+                        "Done!" | shoutOut -MsgType Success
+                    } catch {
+                        "Failed to install '{0}'!" -f $n | shoutOut -MsgType Error
+                        $_ | shoutOut
                     }
-
-
-                    $psmdir = "C:\PSModules"
-                    "Registering '{0}' to the PSModulePath..." -f $psmdir | shoutOut
-                    $rmp = "HKLM\OFFLINE-SYSTEM"
-                    Run-Operation { reg load $rmp "$VHDMountDir\Windows\System32\Config\SYSTEM" }
-
-                    $envKey = "$rmp\ControlSet001\Control\Session Manager\Environment" -replace "HKLM", "HKLM:"
-                    $curpsmpstr = { Get-ItemProperty $envKey PSModulePath | ForEach-Object PSModulePath } | Run-Operation
-
-                    if (!$curpsmpstr.contains($psmdir)) {
-                        $curpsmp = $curpsmpstr -split ";"
-                        $newpsmp = $curpsmp += $psmdir
-                        $newpsmpstr = $newpsmp -join ";"
-                        { Set-ItemProperty $envKey PSModulePath $newpsmpstr } | Run-Operation
-                    } else {
-                        "'{0}' is already in the PSmodulePath." -f $psmdir | shoutOut -MsgType Success
-                    }
-
-                    Run-Operation { reg unload $rmp }
 
                 }
+
+                $psmdir = "C:\PSModules"
+                "Registering '{0}' to the PSModulePath..." -f $psmdir | shoutOut
+                $rmp = "HKLM\OFFLINE-SYSTEM"
+                Run-Operation { reg load $rmp "$VHDMountDir\Windows\System32\Config\SYSTEM" }
+
+                $envKey = "$rmp\ControlSet001\Control\Session Manager\Environment" -replace "HKLM", "HKLM:"
+                $curpsmpstr = { Get-ItemProperty $envKey PSModulePath | ForEach-Object PSModulePath } | Run-Operation
+
+                if (!$curpsmpstr.contains($psmdir)) {
+                    $curpsmp = $curpsmpstr -split ";"
+                    $newpsmp = $curpsmp += $psmdir
+                    $newpsmpstr = $newpsmp -join ";"
+                    { Set-ItemProperty $envKey PSModulePath $newpsmpstr } | Run-Operation
+                } else {
+                    "'{0}' is already in the PSmodulePath." -f $psmdir | shoutOut -MsgType Success
+                }
+
+                Run-Operation { reg unload $rmp }
 
                 if ($jobFile = $vhdConfig.JobFile) {
                     shoutOut "Trying to include a job file... ('$jobFile')"
                     if ( Test-Path $jobFile ) {
-                        shoutOut "Including '$jobFile'..."
                         $jobFileDestDir = "$VHDMountDir\setup"
                         $jobFileDest = "$jobFileDestDir\setup.ini"
+                        "Adding '{0}' to '{1}'..." -f $jobFile, $jobFileDestDir | shoutOut
 
                         if (!(Test-Path $jobFileDestDir -PathType Container)) {
-                            mkdir $jobFileDestDir
+                            mkdir $jobFileDestDir | shoutOut
                         }
 
                         Copy-Item $jobFile $jobFileDest
