@@ -12,6 +12,9 @@ Currently only accepts a section called "Credential-AutoLogon" with the followin
 
 All 3 fields are currently mandatory.
 
+.PARAMETER LogDir
+Path to the folder where log file should be written.
+
 .PARAMETER StartImmediately
 Switch to determine if the Scheduled Task should be run immediately after install completes.
 
@@ -19,6 +22,7 @@ Switch to determine if the Scheduled Task should be run immediately after instal
 function Install-Caffeine {
     param(
         $SetupFile = "C:\setup\setup.ini",
+        $LogDir = "C:\CaffeineLogs",
         [Switch]$StartImmediately
     )
 
@@ -38,7 +42,6 @@ function Install-Caffeine {
 
     # At this point we should be running as admin
 
-    $logDir = "C:\CaffeineLogs"
     $tmpDir = "C:\temp"
 
     if (-not (Test-Path $logDir -PathType Container)) { mkdir $logDir }
@@ -57,7 +60,7 @@ function Install-Caffeine {
     }
 
     "Registering caffeine as a Scheduled Task ('{0}', AtStartup as SYSTEM)..." -f $caffeineTaskName >> $installLogFile
-    $a = New-ScheduledTaskAction -Execute Powershell.exe -Argument "Start-Caffeine"
+    $a = New-ScheduledTaskAction -Execute Powershell.exe -Argument "Start-Caffeine -JobFile '$SetupFile' -LogFile '$LogDir\caffeine.log'"
     $t = New-ScheduledTaskTrigger -AtStartup
     $s = New-ScheduledTaskSettingsSet -Priority 3 -AllowStartIfOnBatteries
     $p = New-ScheduledTaskPrincipal -UserId System -LogonType ServiceAccount
