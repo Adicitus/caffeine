@@ -60,7 +60,7 @@ function Install-Caffeine {
     }
 
     "Registering caffeine as a Scheduled Task ('{0}', AtStartup as SYSTEM)..." -f $caffeineTaskName >> $installLogFile
-    $a = New-ScheduledTaskAction -Execute Powershell.exe -Argument "Start-Caffeine -JobFile '$SetupFile' -LogFile '$LogDir\caffeine.log'"
+    $a = New-ScheduledTaskAction -Execute Powershell.exe -Argument "Start-Caffeine -JobFile '$SetupFile'"
     $t = New-ScheduledTaskTrigger -AtStartup
     $s = New-ScheduledTaskSettingsSet -Priority 3 -AllowStartIfOnBatteries
     $p = New-ScheduledTaskPrincipal -UserId System -LogonType ServiceAccount

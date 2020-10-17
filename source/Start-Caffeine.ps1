@@ -16,19 +16,21 @@ key in the registry, and if that fails it then tries to use "C:\setup\setup.ini"
 The job file used by the script during it's first execution will will be used
 to populate the "HKLM\SOFTWARE\CAFSetup\JobFile" registry value.
 
-.PARAMETER LogFile
-Path to the log file where messages from this script should be written.
+.PARAMETER LogDir
+Path to the directory where log files will be kept.
 #>
 
 function Start-Caffeine {
     param(
         $JobFile = $null,
-        $LogFile = "C:\CAFination.log"
+        $LogDir = "C:\CaffeineLogs"
     )
 
     # =========================================================================== #
     # ======================== Start: Main script body ========================== #
     # =========================================================================== #
+
+    $LogFile = "{0}\caffeine.{1}.{2:yyyyMMdd-HHmmss}.log" -f $logDir, $PID, [datetime]::now
 
     Set-ShoutOutConfig -LogFile $LogFile
 
