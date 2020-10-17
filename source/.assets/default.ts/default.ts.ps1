@@ -8,7 +8,10 @@
 # TODO: This should be a helper function
 $loadHiveConfigs = { # Closure to update the configuration with hive configurations
     
-    Get-Volume | ? { $VolumePath = Find-VolumePath $_ -FirstOnly; $volumePath } | % { # Rewrite to use Win32_MountPoint instead of Driveletter
+    Get-Volume | Where-Object {
+        $VolumePath = Find-VolumePath $_ -FirstOnly
+        $volumePath
+    } | ForEach-Object { # Rewrite to use Win32_MountPoint instead of Driveletter
         $hiveConfig = "{0}hive.ini" -f $VolumePath
         write-host $hiveConfig
         if (Test-Path $hiveConfig) {
@@ -36,7 +39,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
         if (!$r -or $r -is [System.Management.Automation.ErrorRecord]) {
             shoutOut "The specified job file is missing! ('$JobFile')"
         }
-        $r = { Get-NetAdapter | ? { $_.Status -eq "Up" } } | Run-Operation
+        $r = { Get-NetAdapter | Where-Object { $_.Status -eq "Up" } } | Run-Operation
         if (!$r -or $r -is [System.Management.Automation.ErrorRecord]) {
             shoutOut "There seems to be no active network adapters on this system!" Yellow
         }
@@ -46,7 +49,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
     Name="FeaturesStep"
     Caption="Installing required features..."
     Block = {
-        $conf.Features.Keys | % {
+        $conf.Features.Keys | ForEach-Object {
             ShoutOut " |-> '$_'" White
             { Install-Feature $_ } | Run-Operation
         }
@@ -57,7 +60,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
     Caption="Peeling pods..."
     Block = {
         $SetupRoot = Split-Path $JobFile
-        $pods = ls -Recurse $SetupRoot | ? { $_ -match "\.(vhd(x)?|rar|exe)$" }
+        $pods = Get-ChildItem -Recurse $SetupRoot | Where-Object { $_ -match "\.(vhd(x)?|rar|exe)$" }
         
         foreach ($pod in $pods) {
             _peelPodFile $pod
@@ -101,13 +104,23 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
             }
             shoutOut "Modifying the taskbar..."
             shoutOut "Available apps:"
-            Run-Operation { (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | % { $_.Name } }
+            Run-Operation { (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | ForEach-Object { $_.Name } }
             
             if ($conf.Taskbar.ContainsKey("Pin")) {
-                $conf.Taskbar.Pin | ? { $_ -is [string] } | % { shoutOUt "Pinning '$_'"; $_ } | % { Pin-App $_ }
+                $conf.Taskbar.Pin | Where-Object {
+                    $_ -is [string]
+                } | ForEach-Object {
+                    shoutOUt "Pinning '$_'"
+                    Pin-App $_
+                }
             }
             if ($conf.Taskbar.ContainsKey("Unpin")) {
-                $conf.Taskbar.Unpin | ? { $_ -is [string] } | % { shoutOUt "Unpinning '$_'"; $_ } | % { Pin-App $_ -Unpin }
+                $conf.Taskbar.Unpin | Where-Object {
+                    $_ -is [string]
+                } | ForEach-Object {
+                    shoutOUt "Unpinning '$_'"
+                    Pin-App $_ -Unpin
+                }
             }
         }
     }
@@ -128,7 +141,12 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
         {sc.exe queryex winrm} | Run-Operation -OutNull
         shoutOut "Checking WinRM Configuration... " Cyan
         $winrmConfig = { sc.exe qc winrm } | Run-Operation
-        if (!($winrmConfig | ? { $_ -match "START_TYPE\s+:\s+2"})) { # 2=Autostart
+        if  ( -not (
+                    $winrmConfig | Where-Object {
+                        $_ -match "START_TYPE\s+:\s+2"
+                    }
+            )
+        ) { # 2=Autostart
             { sc.exe config winrmstart= auto } | Run-Operation -OutNull
         }
 
