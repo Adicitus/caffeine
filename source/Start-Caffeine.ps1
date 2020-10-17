@@ -37,33 +37,31 @@ function Start-Caffeine {
     _verifyHives
 
     $registryKey = "HKLM\SOFTWARE\CAFSetup"
-    shoutOut "Using registry key '$registryKey'..." cyan 
+    shoutOut "Using registry key '$registryKey'..." 
 
     # =========================================================================== #
     # ==================== Start: Getting job configuration ===================== #
     # =========================================================================== #
 
     if (!$jobFile) {
-        shoutOut "No job file specified, attempting to select one..." cyan -NoNewline
+        shoutOut "No job file specified, attempting to select one..." -NoNewline
         $JobFile = "C:\setup\setup.ini"
         $f = Query-RegValue $registryKey "JobFile"
         if ($f) { $JobFile = $f }
-        shoutOut " Using $JobFile..." Cyan
+        shoutOut " Using $JobFile..."
     }
 
     if (!(Test-Path $jobFile)) {
-        shoutOut "Unable to find the job file '$JobFile'! Quitting" Red
+        shoutOut "Unable to find the job file '$JobFile'! Quitting" Error
         return
     }
 
-    shoutOut "Parsing the job file..." Cyan
+    shoutOut "Parsing the job file..."
     $conf = { Parse-ConfigFile $JobFile -NotStrict } | Run-Operation
     if ($conf -isnot [hashtable]) {
-        shoutOut "Unable to parse the job file @ '$JobFile'! Quitting!" Red
+        shoutOut "Unable to parse the job file @ '$JobFile'! Quitting!" Error
         return
     }
-
-    $SetupRoot = Split-Path $JobFile
 
     shoutOut "Done!" Green
 
@@ -71,7 +69,7 @@ function Start-Caffeine {
     # ===================== End: Getting job configuration ====================== #
     # =========================================================================== #
 
-    _installCAFRegistry $registryKey $conf ". '$PSCommandPath'" $JobFile $SetupRoot
+    _installCAFRegistry $registryKey $JobFile
 
     $stepN = Query-RegValue  $registryKey "InstallStep"
 
@@ -83,7 +81,7 @@ function Start-Caffeine {
     if (!($tsf -is [string] -and (Test-Path $tsf))) {
         $tsf = "$PSScriptRoot\.assets\default.ts\default.ts.ps1"
     }
-    "Using task sequence defined in '{0}'..." -f $tsf | shoutOut -Foreground Cyan
+    "Using task sequence defined in '{0}'..." -f $tsf | shoutOut -Foreground
     $installSteps = New-Object System.Collections.ArrayList
     $n = 0
     . $tsf | Where-Object { 
@@ -101,21 +99,19 @@ function Start-Caffeine {
     # ======================= Start: Setup-Sequence loop ======================== #
     # =========================================================================== #
 
-    . "$PSScriptRoot\_runOperations.ps1"
-
     $OperationVars = @{}
 
-    shoutOut "Running pre-setup operations..." Cyan
+    shoutOut "Running pre-setup operations..."
     $operations = $conf["Global"].Pre
     Set-Regvalue $registryKey "NextOperation.Global" 0
     _runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars | Out-Null
 
-    shoutOut "Starting setup-sequence..." Magenta
+    shoutOut "Starting setup-sequence..."
     while ($step = $installSteps[$stepN]){
-        ShoutOut "Installation step: $stepN ($($step.Name))" cyan
-        ShoutOut ("=" * 80) cyan
+        ShoutOut "Installation step: $stepN ($($step.Name))"
+        ShoutOut ("=" * 80)
         
-        shoutOut "Running PRE operations..." Cyan
+        shoutOut "Running PRE operations..."
         $operations = "Pre", "Operation" | ForEach-Object { $conf[$step.Name].$_ }
         $shouldQuit = _runOperations $registryKey "NextOperation" $operations $conf $OperationVars
         shoutOut $shouldQuit
@@ -126,13 +122,13 @@ function Start-Caffeine {
 
         $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
         if (-not $blockIsFinished) {
-            shoutOut "Executing step block: $($step.caption)" magenta
+            shoutOut "Executing step block: $($step.caption)"
             $Stop = . $step.block
-            shoutOut "Step Block done!" Magenta
+            shoutOut "Step Block done!"
             Set-Regvalue $registryKey "BlockIsFinished" 1
         }
 
-        shoutOut "Running POST operations..." Cyan
+        shoutOut "Running POST operations..."
         $operations = $conf[$step.Name].Post
         $shouldQuit = _runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
         shoutOut $shouldQuit
@@ -150,9 +146,9 @@ function Start-Caffeine {
         $stepN += 1
         Set-RegValue $registryKey "InstallStep" $stepN
     }
-    shoutOut "Setup-sequence ended." magenta
+    shoutOut "Setup-sequence ended."
 
-    shoutOut "Running post-setup operations..." Cyan
+    shoutOut "Running post-setup operations..."
     $operations = $conf["Global"].Post
     Set-Regvalue $registryKey "NextOperation.Global" 0
     _runOperations $registryKey "NextOperation.Global" $operations $conf $OperationVars

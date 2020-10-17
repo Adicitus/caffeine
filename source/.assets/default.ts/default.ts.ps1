@@ -56,6 +56,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
     Name="PodsStep"
     Caption="Peeling pods..."
     Block = {
+        $SetupRoot = Split-Path $JobFile
         $pods = ls -Recurse $SetupRoot | ? { $_ -match "\.(vhd(x)?|rar|exe)$" }
         
         foreach ($pod in $pods) {

@@ -2,10 +2,7 @@
 function _installCAFRegistry {
     param(
         $registryKey,
-        $conf,
-        $AutorunScript,
-        $JobFile,
-        $SetupRoot
+        $JobFile
     )
 
     $caffeineRoot = $PSScriptRoot
@@ -20,10 +17,7 @@ function _installCAFRegistry {
         shoutOut "Initializing CAFSetup Registry key..."
         $operations = @(
             { reg add "$registryKey" /f }
-            { reg add "$registryKey" /v CourseID /t REG_SZ /d "$($conf.Course.Id)" /f }
-            { reg add "$registryKey" /v JobName /t REG_SZ /d "$($conf.Job.name)" /f }
             { reg add "$registryKey" /v JobFile /t REG_SZ /d "$JobFile" /f }
-            { reg add "$registryKey" /v SetupRoot /t REG_SZ /d "$SetupRoot" /f }
             { reg add "$registryKey" /v CAFDir /t REG_SZ /d "$caffeineRoot" /f }
             { reg add "$registryKey" /v InstallStep /t REG_DWORD /d 0 /f }
             { reg add "$registryKey" /v NextOperation /t REG_DWORD /d 0 /f }
