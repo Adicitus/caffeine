@@ -13,7 +13,7 @@ function _installCAFRegistry {
 
     "`$registryKey='{0}'" -f $registryKey | shoutOut
 
-    if ( !(Query-RegValue $registryKey CourseID) ) {
+    if ( !(Query-RegValue $registryKey InstallStart) ) {
         shoutOut "Initializing CAFSetup Registry key..."
         $operations = @(
             { reg add "$registryKey" /f }
