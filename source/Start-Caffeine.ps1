@@ -83,7 +83,7 @@ function Start-Caffeine {
     if (!($tsf -is [string] -and (Test-Path $tsf))) {
         $tsf = "$PSScriptRoot\.assets\default.ts\default.ts.ps1"
     }
-    "Using task sequence defined in '{0}'..." -f $tsf | shoutOut -Foreground
+    "Using task sequence defined in '{0}'..." -f $tsf | shoutOut
     $installSteps = New-Object System.Collections.ArrayList
     $n = 0
     . $tsf | Where-Object { 

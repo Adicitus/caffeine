@@ -20,7 +20,7 @@ Function _createVMSwitch{
     }
 
     if (!$CurSwitch) {
-        shoutOut "ERROR: No switch found or created!" -ForegroundColor Red
+        shoutOut "ERROR: No switch found or created!" Error
         return
     }
 

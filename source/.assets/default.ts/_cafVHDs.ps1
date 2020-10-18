@@ -142,7 +142,6 @@ function _cafVHDs {
             $_.Volumes = @()
             $i64c = New-Object System.ComponentModel.Int64Converter
             for($i = 0; $i -lt $r.Length; $i++) {
-                # write-host $r[$i] -ForegroundColor Gray
                 if ($r[$i] -match "^Index : (?<Index>[0-9]+)") {
                     $volume = @{ Index=$i64c.ConvertFrom($Matches.Index) }
 

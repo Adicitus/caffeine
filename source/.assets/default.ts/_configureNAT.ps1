@@ -5,7 +5,7 @@ function _configureNAT {
     param($configuration)
 
     if (!$configuration) {
-        shoutOut "No configuration object provided, Skipping NAT configuration." -ForegroundColor Yellow
+        shoutOut "No configuration object provided, Skipping NAT configuration." Warning
         return
     }
 
