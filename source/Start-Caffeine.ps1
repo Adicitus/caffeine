@@ -30,7 +30,7 @@ function Start-Caffeine {
     # ======================== Start: Main script body ========================== #
     # =========================================================================== #
 
-    $LogFile = "{0}\caffeine.{1}.{2:yyyyMMdd-HHmmss}.log" -f $logDir, $PID, [datetime]::now
+    $LogFile = "{0}\run.{1:yyyyMMdd-HHmmss}.{2}.log" -f $logDir, [datetime]::now, $PID
 
     Set-ShoutOutConfig -LogFile $LogFile
 

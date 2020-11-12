@@ -47,7 +47,7 @@ function Install-Caffeine {
     if (-not (Test-Path $logDir -PathType Container)) { mkdir $logDir }
     if (-not (Test-Path $tmpDir -PathType Container)) { mkdir $tmpDir }
 
-    $installLogFile = "{0}\install.{1}.{2:yyyyMMdd-HHmmss}.log" -f $logDir, $PID, [datetime]::now
+    $installLogFile = "{0}\install.{1:yyyyMMdd-HHmmss}.{2}.log" -f $logDir, [datetime]::now, $PID
     "Install started @ {0:yyyy/MM/dd-HH:mm:ss}" -f [datetime]::now >> $installLogFile
 
     $setup = Parse-ConfigFile $SetupFile
