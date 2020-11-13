@@ -33,10 +33,13 @@ function _verifyAssertions{
 
     $assertTypes = @{
         Assert=@{
-            Check = { param($r) ($r -eq $null) -or ($r.GetType() -ne [System.Management.Automation.ErrorRecord]) }
+            Check = { param($r) ($null -eq $r) -or ($r.GetType() -ne [System.Management.Automation.ErrorRecord]) }
         }
         AssertException=@{
-            Check = { param($r) ($r -ne $null) -and ($r.GetType() -eq [System.Management.Automation.ErrorRecord]) }
+            Check = { param($r) ($null -ne $r) -and ($r.GetType() -eq [System.Management.Automation.ErrorRecord]) }
+        }
+        AssertNull=@{
+            Check = { param($r) $null -eq $r }
         }
         AssertTrue=@{
             Check = { param($r) if ($r) { $true } else { $false } }
@@ -46,12 +49,17 @@ function _verifyAssertions{
         }
     }
 
-    $assertKeys = $conf.Keys | ? { $_ -match "^(?<type>Assert[^:\s]*):(?<name>.+)" } | % { @{ Key=$_; Name=$Matches.Name; Type=$Matches.Type } }
+    $assertKeys = $conf.Keys | Where-Object {
+        $_ -match "^(?<type>Assert[^:\s]*):(?<name>.+)"
+    } | ForEach-Object {
+        @{ Key=$_; Name=$Matches.Name; Type=$Matches.Type }
+    }
+    
     shoutOut "Found the following Assert sections:"
-    shoutOut ($assertKeys | % Key)
+    shoutOut ($assertKeys | ForEach-Object Key)
 
 
-    $asserts = $assertKeys | ? { $conf[$_.Key].Test } | % {
+    $asserts = $assertKeys | Where-Object { $conf[$_.Key].Test } | ForEach-Object {
         $assert = @{
             Name=$_.Name
             Type=$_.Type
@@ -80,7 +88,7 @@ function _verifyAssertions{
 
     $result = @()
 
-    $asserts | % {
+    $asserts | ForEach-Object {
         shoutOut ("Checking '{0}' ({1}, {2} lines)..." -f $_.Name, $_.Type, @($_.Test).length) -NoNewLine
 
         $assert = $_
@@ -89,7 +97,7 @@ function _verifyAssertions{
         $OldErrorActionPreference = $ErrorActionPreference
         $ErrorActionPreference = "Stop"
 
-        $_.Test | % {
+        $_.Test | ForEach-Object {
             $t = $_
             "Running '{0}'..." -f $t | shoutOut
             $r = try {
@@ -114,12 +122,12 @@ function _verifyAssertions{
             $p = $false
         } else {
 
-            $rs | % {
-                $results[$_[0]] = $_[1] | Out-String
-                
-                if ( !(. $assertTypes[$assert.Type].Check $_[1]) ) {
+            foreach($r in $rs) {
+                $results[$r[0]] = $r[1] | Out-String
+
+                if ( !(. $assertTypes[$assert.Type].Check $r[1]) ) {
                     $p = $false
-                    $failedTests += $_[0]
+                    $failedTests += $r[0]
                 }
             }
         }
