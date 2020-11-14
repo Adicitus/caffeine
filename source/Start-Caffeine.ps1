@@ -30,7 +30,14 @@ function Start-Caffeine {
     # ======================== Start: Main script body ========================== #
     # =========================================================================== #
 
-    $LogFile = "{0}\run.{1:yyyyMMdd-HHmmss}.{2}.log" -f $logDir, [datetime]::now, $PID
+    $i = whoami.exe
+    $d, $u = $i.split("\")
+    $a = if ($u) {
+        "{0}@{1}" -f $u, $d
+    } else {
+        $d
+    }
+    $LogFile = "{0}\run.{1:yyyyMMdd-HHmmss}.{2}.{3}.log" -f $logDir, [datetime]::now, $a, $PID
 
     Set-ShoutOutConfig -LogFile $LogFile
 
