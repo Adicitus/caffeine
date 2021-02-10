@@ -24,6 +24,10 @@ A default Task Sequence is available in the .assets folder: in the folder defaul
 
 This is built on the old "Collect, Analyze, Fix" setup (CAFSetup) for "Microsoft Official Courseware" environments, and the step there reflect this.
 
+To use a custom task sequence, specify a PowerShell script file in the configuration .ini file.
+
+The task sequence file to use is specified in the [Global] section using the TaskSequenceFile option.
+
 ## Compatibility
 Caffeine was originally built to target PowerShell V2 and above, however it is best to assume that at least PowerShell V3 is required.
 
