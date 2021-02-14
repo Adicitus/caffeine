@@ -120,26 +120,28 @@ function Start-Caffeine {
         ShoutOut "Installation step: $stepN ($($step.Name))"
         ShoutOut ("=" * 80)
         
-        shoutOut "Running PRE operations..."
-        $operations = "Pre", "Operation" | ForEach-Object { $conf[$step.Name].$_ }
-        $shouldQuit = _runOperations $registryKey "NextOperation" $operations $conf $OperationVars
-        shoutOut $shouldQuit
-        if ($shouldQuit) {
-            "Quitting setup because _runOperations signaled we should." | shoutOut
-            return
-        }
-
         $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
+        
         if (-not $blockIsFinished) {
+            shoutOut "Running PRE operations..."
+            $operations = "Pre", "Operation" | ForEach-Object { $conf[$step.Name].$_ }
+            $shouldQuit = _runOperations $registryKey "NextOperation" $operations $conf $OperationVars
+            '$shouldQuit is: ' -f  $shouldQuit | shoutOut
+            if ($shouldQuit) {
+                "Quitting setup because _runOperations signaled we should." | shoutOut
+                return
+            }
+            
             shoutOut "Executing step block: $($step.caption)"
             $Stop = . $step.block
             shoutOut "Step Block done!"
             Set-Regvalue $registryKey "BlockIsFinished" 1
+            Set-Regvalue $registryKey "NextOperation" 0
         }
 
         shoutOut "Running POST operations..."
         $operations = $conf[$step.Name].Post
-        $shouldQuit = _runOperations $registryKey "NextPostOperation" $operations $conf $OperationVars
+        $shouldQuit = _runOperations $registryKey "NextOperation" $operations $conf $OperationVars
         shoutOut $shouldQuit
         if ($shouldQuit) { 
             "Quitting setup because _runOperations signaled we should." | shoutOut

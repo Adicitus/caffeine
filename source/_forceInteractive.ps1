@@ -6,7 +6,7 @@ function _forceInteractive{
 
     if ([Environment]::UserInteractive) {
         shoutOut "Already in an interactive session."
-        continue
+        return @{ Success = $false; Repeat = $false }
     }
 
     $credentials = $conf.Keys | Where-Object {
@@ -49,7 +49,7 @@ function _forceInteractive{
             if (!(Test-Path C:\Temp -PathType Container)) { mkdir C:\temp }
             _ensureAutoLogon $conf "C:\temp"
             Restart-Computer
-            return $true
+            return @{ Success = $false; Repeat = $true }
         }
     } while($null -eq $users)
     
@@ -79,12 +79,12 @@ function _forceInteractive{
 
                     if ($r -match "Error Code 0") {
                         shoutOut "Success" Success
-                        return $true
+                        return @{ Success = $true; Repeat = $false }
                     }
                 }
             }
         }
 
-        return $false
+        return @{ Success = $false; Repeat = $false }
     }
 }

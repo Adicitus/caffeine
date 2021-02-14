@@ -95,8 +95,12 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
                 shoutOut "Attempting to enter into an interactive user session." Cyan
 
                 $r = _forceInteractive $conf
+                
+                if ($r.Repeat) {
+                    Set-Regvalue $registryKey $registryValue $OperationN
+                }
 
-                if ($r) {
+                if ($r.Success) {
                     "Broke into interactive session and finished running there." | shoutOut -MsgType Success
                     $shouldQuit = $true
                     $shouldIncrement = $false
