@@ -55,6 +55,15 @@ function _passiveRearmVM {
             $volume = $partition | Get-Volume
             $path = Find-VolumePath $volume
 
+            if (!(Test-path $path)) {
+                shoutOut "The assigned drive-letter path is not valid for some reason, adding a new access path..." -MsgType Warning
+                $tmpDir = "C:\temp\{0:x}" -f ([datetime]::Now.Ticks)
+                mkdir $tmpDir
+                $partition | Add-PartitionAccessPath -AccessPath $tmpDir
+                $path = "{0}\" -f $tmpDir
+                shoutOut "Added '$tmpDir'." -MsgType Success
+            }
+
             if ( !(Test-Path "${Path}Windows\System32\Config\SOFTWARE") ) {
                 shoutOut "No windows directory, Skip!"
                 continue
@@ -78,6 +87,13 @@ function _passiveRearmVM {
                 { reg unload $offlineSoftwareMP } | Run-Operation -OutNull
 
                 sleep -Milliseconds $vhdCooldownTimeout # sleep to avoid timing error between the dismounting of the VHD and unloading the registry.
+            }
+
+            if ($tmpDir) {
+                shoutOut "Cleaning up temporary access path..." -NoNewline
+                $partition | Remove-PartitionAccessPath -AccessPath $tmpDir
+                Remove-Item $tmpDir -Recurse -Force
+                shoutOut "Done!" -MsgType Success
             }
         }
 
