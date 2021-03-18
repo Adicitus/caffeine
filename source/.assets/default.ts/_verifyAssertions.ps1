@@ -91,6 +91,28 @@ function _verifyAssertions{
     $asserts | ForEach-Object {
         shoutOut ("Checking '{0}' ({1}, {2} lines)..." -f $_.Name, $_.Type, @($_.Test).length) -NoNewLine
 
+        # If the assert has preconditions specified we need to check verify that these apply.
+        # Preconditions are expressions that should be evaluated, if the result evaluates to
+        # $true the precondition is said to apply.
+        if ($_.ContainsKey('precondition')) {
+            foreach ( $f in $_.precondition) {
+                try {
+                    $r = Invoke-Expression $f
+                    if ($true -ne $r) {
+                        "Precondition check failed, skipping Assert. Precondition: " | shoutOut
+                        $f | shoutOut
+                        return
+                    }
+                } catch {
+                    "Precondition check failed with an error: " | shoutOut -MsgType Error
+                    $_ | shoutOut
+                    "Precondition that failed: " | shoutOut
+                    $f | shoutOut
+                    return
+                }
+            }
+        }
+
         $assert = $_
         $rs = New-Object System.Collections.ArrayList
 
