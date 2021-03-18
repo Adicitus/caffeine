@@ -229,6 +229,23 @@ function _cafVHDs {
                 shoutOut "Partition #$($partition.PartitionNumber) has a path '$($volumePath)'." Green
             }
             
+            if (!(Test-path $volumePath)) {
+                shoutOut "The assigned drive-letter path is not valid for some reason, adding a new access path..." -MsgType Warning
+                $temporaryAccessPath = "C:\temp\{0:x}" -f ([datetime]::Now.Ticks)
+                mkdir $temporaryAccessPath
+                $partition | Add-PartitionAccessPath -AccessPath $temporaryAccessPath
+                $volumePath = "{0}\" -f $temporaryAccessPath
+                shoutOut "Added '$temporaryAccessPath'." -MsgType Success
+
+                $cleanupTemporaryAccessPath = {
+                    shoutOut "Cleaning up temporary access path..." -NoNewline
+                    $partition | Remove-PartitionAccessPath -AccessPath $temporaryAccessPath
+                    Remove-Item $temporaryAccessPath -Recurse -Force
+                    shoutOut "Done!" -MsgType Success
+                }
+            }
+
+
             $VHDMountDir = $volumePath
 
             $r = {. $dism /Image:"$($VHDMountDir)" /Get-CurrentEdition} | Run-Operation
@@ -236,6 +253,7 @@ function _cafVHDs {
 
             if ($rf -match "Error\s*: (?<error>(0x)?[0-9a-f]+)") {
                 shoutOut "Unable to find a Windows installation at '$VHDMountDir'" Red
+                if ($cleanupTemporaryAccessPath) { . $cleanupTemporaryAccessPath }
                 return
             }
 
@@ -251,6 +269,7 @@ function _cafVHDs {
 
             if (($noFixPaths | Where-Object { $record.File -like "$_*" }) -and !($fixPaths | Where-Object { $record.File -like "$_*" })) {
                 shoutOut ("'{0}' is in a path marked NoFix, skipping..." -f $record.File)
+                if ($cleanupTemporaryAccessPath) { . $cleanupTemporaryAccessPath }
                 return
             }
             #-----------------------------------------------------------------#
@@ -413,6 +432,8 @@ function _cafVHDs {
         
             _configureOfflineHKLM $VHDMountDir $Configuration
             _ConfigureOfflineHKUs $VHDMountDir $Configuration
+
+            if ($cleanupTemporaryAccessPath) { . $cleanupTemporaryAccessPath }
 
             #-----------------------------------------------------------------#
             #                           End of Fixing                         #
