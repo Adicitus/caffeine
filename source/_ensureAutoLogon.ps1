@@ -13,7 +13,7 @@ function _ensureAutoLogon {
 
             if (!$user) {
                 $params = @{
-                    $params.name = $autologon.username
+                    name = $autologon.username
                 }
 
                 if ($autologon.password) {
@@ -34,7 +34,7 @@ function _ensureAutoLogon {
         $outputFile = "$tmpDir\winlogon.reg"
 
         "Generating .reg file from template ('{0}') -> {1}" -f $templateFile, $outputFile >> $LogFile
-        Render-template $templateFile $autologon >> $outputFile
+        Render-template $templateFile $autologon > $outputFile
         "Importing the .reg file..." >> $LogFile
         reg import $outputFile >> $LogFile
     }
