@@ -2,8 +2,7 @@
 function _ensureAutoLogon {
     param(
         $Setup,
-        $TmpDir,
-        $LogFile
+        $TmpDir
     )
 
     if ($autologon = $setup.'Credential-AutoLogin') {
@@ -33,9 +32,9 @@ function _ensureAutoLogon {
         $templateFile = "$PSScriptRoot\.assets\templates\winlogon.tmplt.reg"
         $outputFile = "$tmpDir\winlogon.reg"
 
-        "Generating .reg file from template ('{0}') -> {1}" -f $templateFile, $outputFile >> $LogFile
+        "Generating .reg file from template ('{0}') -> {1}" -f $templateFile, $outputFile | shoutOut
         Render-template $templateFile $autologon > $outputFile
-        "Importing the .reg file..." >> $LogFile
-        reg import $outputFile >> $LogFile
+        "Importing the .reg file..." | shoutOut
+        reg import $outputFile | shoutOut
     }
 }
