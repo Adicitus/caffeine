@@ -1,7 +1,7 @@
 
 function _ensureElevation {
     param(
-        $logFile
+        $Command
     )
 
     $currentIdentity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -9,26 +9,21 @@ function _ensureElevation {
 
     $isAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-    $callStack = Get-PSCallStack
-
-    $caller = $callStack[1]
-
     if (!$isAdmin) {
         $elevationArgs = @{
             Verb="RunAs"
         }
 
-        if ($caller.ScriptName) {
-            $args.ArgumentList = "-Command {0}; {1}" -f $caller.ScriptName, "Pause"
-        }
+        "Attempting to start an elevated shell with the following command: {0}" -f $Command | ShoutOut
+        $elevationArgs.ArgumentList = "-Command {0}" -f $Command
 
         try {
             $proc = Start-Process Powershell @elevationArgs -PassThru
-            if ($logFile) { "Started a new Powershell session as Admin" >> $logFile }
+            "Started a new Powershell session as Admin" | shoutOut 
             return $proc
         } catch {
-            if ($logFile) { "Unable to start new Powershell Admin session:" >> $logFile }
-            if ($logFile) { $_ | Out-string >> $logFile }
+            "Unable to start new Powershell Admin session:" | shoutOut
+            $_ | shoutOut
             return $_
         }
 

@@ -26,15 +26,25 @@ function Install-Caffeine {
         [Switch]$StartImmediately
     )
 
-    $elevationResult = _ensureElevation
+    $installLogFile = "{0}\install.{1:yyyyMMdd-HHmmss}.{2}.log" -f $logDir, [datetime]::now, $PID
+
+    Set-ShoutOutDefaultLog -LogFilePath $installLogFile
+
+    "Install started @ {0:yyyy/MM/dd-HH:mm:ss}" -f [datetime]::now | shoutOut
+
+    $cmd = 'Install-Caffeine -SetupFile {0} -LogDir {1}' -f $SetupFile, $LogDir
+    if ($StartImmediately) {
+        $cmd += " -StartImmediately"
+    }
+    $elevationResult = _ensureElevation $cmd
 
     if ($elevationResult -ne $true) {
         if ($elevationResult -is [System.Diagnostics.Process]) {
-            "We've spawned a process (PID: {0}) to run as Admin, quitting." -f $elevationResult.Id | Write-Host -ForegroundColor Green
+            "We've spawned a process (PID: {0}) to run as Admin, quitting." -f $elevationResult.Id | ShoutOut -MsgType Success
         } else {
-            "Unable to spawn a new process to run as Admin, Current user ({0}) may not have administrator privileges:" -f (whoami.exe) | Write-Host -ForegroundColor Red
-            $elevationResult | Out-String | Write-Host -ForegroundColor Red
-            "Quitting." | Write-Host -ForegroundColor Red
+            "Unable to spawn a new process to run as Admin, Current user ({0}) may not have administrator privileges:" -f (whoami.exe) | ShoutOut -MsgType Error
+            $elevationResult | Out-String | shoutOut
+            "Quitting." | ShoutOut
         }
 
         return
@@ -44,22 +54,18 @@ function Install-Caffeine {
 
     $tmpDir = "C:\temp"
 
-    if (-not (Test-Path $logDir -PathType Container)) { mkdir $logDir }
     if (-not (Test-Path $tmpDir -PathType Container)) { mkdir $tmpDir }
-
-    $installLogFile = "{0}\install.{1:yyyyMMdd-HHmmss}.{2}.log" -f $logDir, [datetime]::now, $PID
-    "Install started @ {0:yyyy/MM/dd-HH:mm:ss}" -f [datetime]::now >> $installLogFile
 
     $setup = Parse-ConfigFile $SetupFile
 
-    _ensureAutoLogon $Setup $tmpDir $installLogFile
+    _ensureAutoLogon $Setup $tmpDir
 
     $caffeineTaskName = "Start Caffeine"
     if ($oldTask = Get-ScheduledTask $caffeineTaskName) {
         $oldTask | Unregister-ScheduledTask -Confirm:$false
     }
 
-    "Registering caffeine as a Scheduled Task ('{0}', AtStartup as SYSTEM)..." -f $caffeineTaskName >> $installLogFile
+    "Registering caffeine as a Scheduled Task ('{0}', AtStartup as SYSTEM)..." -f $caffeineTaskName | shoutOut
     $a = New-ScheduledTaskAction -Execute Powershell.exe -Argument "Start-Caffeine -JobFile '$SetupFile'"
     $t = New-ScheduledTaskTrigger -AtStartup
     $s = New-ScheduledTaskSettingsSet -Priority 3 -AllowStartIfOnBatteries
@@ -67,20 +73,20 @@ function Install-Caffeine {
 
     $r = Register-ScheduledTask -TaskName $caffeineTaskName -Principal $p -Action $a -Trigger $t -Settings $s
 
-    $r | Out-string >> $installLogFile
+    $r | Out-string | shoutOut
 
     if ($r -is [Microsoft.Management.Infrastructure.CimInstance]) {
-        "Registered caffeine Task successfully." >> $installLogFile
+        "Registered caffeine Task successfully." | shoutOut
         if ($StartImmediately) {
-            "Attempting to start the Task..." >> $installLogFile
+            "Attempting to start the Task..." | shoutOut
             $r | Start-ScheduledTask
             $task = Get-ScheduledTask $caffeineTaskName
-            $task | Out-string  >> $installLogFile
+            $task | Out-string  | shoutOut
         }
 
-        "Installation finished. Quitting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now >> $installLogFile
+        "Installation finished. Quitting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now | shoutOut
     } else {
-        "Failed to install Caffeine as a task. Quiting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now >> $installLogFile
+        "Failed to install Caffeine as a task. Quiting @ {0:yyyy/MM/dd - HH:mm:ss}" -f [datetime]::Now | shoutOut
     }
 
 }
