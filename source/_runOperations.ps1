@@ -72,7 +72,13 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
         }
     }
 
+    # Remporary code using hard-coded registry values to deal with OpOverruns: situations where the PSExec returns a non-0 error code, but has run caffeine anyways.
+    # In this situation the current operations chain may be invalid when we return from _forceInteractive.
+    $initialStepN = Query-RegValue $registryKey "installStep"
+    $initialBodyFinishedFlag = Query-RegValue $registryKey "BodyFinished"
+
     $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
+    $nextOperationN = $OperationN
 
     if ($null -eq $OperationN) {
         $OperationN = 0
@@ -105,6 +111,28 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
                     $shouldQuit = $true
                     $shouldIncrement = $false
                 } else {
+                    # Temp code to deal with OpOverruns: situations where the PSExec returns a non-0 error code, but has run caffeine anyways.
+                    $curStepN = Query-RegValue $registryKey "installStep"
+                    $curNextOperationN = Query-RegValue $registryKey $registryValue
+                    if (($curStepN -ne $initialStepN)) {
+                        "_forceInteractive reported an unsuccessful run but InstallStep changed, indicating that TS was run."  | shoutOut -MsgType Warning
+                        "Since InstallStep was changed current operations chain is invalid, stopping processing and returning controll to caller." | shoutOut -MsgType Warning
+                        return $false
+                    }
+
+                    if (($curNextOperationN -ne $nextOperationN)) {
+                        "_forceInteractive reported an unsuccessful run but OperationNumber changed, indicating that TS was run."  | shoutOut -MsgType Warning
+                        "Since opeartion number changed: verifying that we should still be processing the current operation chain..." | shoutOut -MsgType Warning
+                        $curBodyFinishedFlag = Query-RegValue $registryKey "BodyFinished"
+
+                        if ($curBodyFinishedFlag -ne $initialBodyFinishedFlag) {
+                            "BodyFinished flag was changed, indicating that the current operations chain is invalid. Stopping processing and returning control to caller." | shoutOut -MsgType Warning
+                            return $false
+                        }
+
+                        "Same InstallStep and BodyFinished flag unchanged, current operations chain is till relevant." | shoutOut
+                    }
+
                     "Failed to enter into an interactive session!" | shoutOut -MsgType Error
                 }
 
@@ -117,7 +145,8 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
 
         if ($shouldIncrement) {
             $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
-            Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
+            $nextOperationN = $OperationN + 1
+            Set-Regvalue $registryKey $registryValue $nextOperationN | Out-Null # Increment the pointer.
         }
 
         if ($shouldQuit) {
