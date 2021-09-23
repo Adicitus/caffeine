@@ -44,8 +44,8 @@ function _forceInteractive{
 
         if ($duration -gt $waitLimit) {
             "Unable to find an active session to break into, trying to reset autologin and restarting." | shoutOut
-            $nextInstallStep = Query-RegValue HKLM\SOFTWARE\CAFSetup InstallStep
-            Set-RegValue HKLM\SOFTWARE\CAFSetup InstallStep ($nextInstallStep - 1)
+            $nextOperation = Query-RegValue HKLM\SOFTWARE\CAFSetup nextOperation
+            Set-RegValue HKLM\SOFTWARE\CAFSetup nextOperation ($nextOperation - 1)
             if (!(Test-Path C:\Temp -PathType Container)) { mkdir C:\temp }
             _ensureAutoLogon $conf "C:\temp"
             Restart-Computer
