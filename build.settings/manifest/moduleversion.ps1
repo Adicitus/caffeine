@@ -1,1 +1,1 @@
-"0.9.27.{0:yyMMddHHmm}" -f [datetime]::now
+"0.10.0.{0:yyMMddHHmm}" -f [datetime]::now
