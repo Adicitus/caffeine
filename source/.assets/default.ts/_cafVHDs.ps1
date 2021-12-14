@@ -312,20 +312,55 @@ function _cafVHDs {
                 
                 "Installing modules to '{0}'..." -f $dstrootpath | shoutOut
 
-                "Caffeine", "ShoutOut", "ACGCore" | ForEach-Object {
-                    $n = $_
-                    "Installing '{0}'..." -f $n | shoutOut
+                $CaffeineModule = Get-Module -Name "Caffeine" -ListAvailable
+
+                $modules = [System.Collections.ArrayList]::new()
+                $modules.Add($CaffeineModule)
+
+                $collectModules = {
+                    param($unsatisfiedModules)
+
+                    if (!$unsatisfiedModules) {
+                        return
+                    }
+
+                    $names = $modules | ForEach-Object Name
+                    $newModules = @()
+
+                    foreach ($module in $unsatisfiedModules) {
+                        $reqModules = $module.RequiredModules
+
+                        foreach ($reqModule in $reqModules) {
+                            if ($reqModule.Name -notin $names) {
+                                $module = Get-Module -Name $reqModule.Name -ListAvailable | Sort-Object Version | Select-Object -last 1
+                                $newModules += $module
+                            }
+                        }
+                    }
+
+                    $newModules | ForEach-Object {
+                        $modules.Add($_)
+                    }
+                    
+                    & $collectModules $newModules
+                }
+
+                & $collectModules $modules
+
+                $modules | ForEach-Object {
+                    $m = $_
+                    "Installing '{0}'..." -f $m.Name | shoutOut
 
                     try {
 
-                        $src = Get-Module $n -ListAvailable
-                        $srcpath = $src.Path | Split-Path -Parent
+                        $src = $m
+                        $srcpath = $src.ModuleBase
 
-                        { robocopy $srcpath "$dstrootpath\$n" /S } | Run-Operation
+                        { robocopy $srcpath "$dstrootpath\$($m.Name)" /S } | Run-Operation
 
                         "Done!" | shoutOut -MsgType Success
                     } catch {
-                        "Failed to install '{0}'!" -f $n | shoutOut -MsgType Error
+                        "Failed to install '{0}'!" -f $m.Name | shoutOut -MsgType Error
                         $_ | shoutOut
                     }
 
