@@ -75,7 +75,7 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
     # Remporary code using hard-coded registry values to deal with OpOverruns: situations where the PSExec returns a non-0 error code, but has run caffeine anyways.
     # In this situation the current operations chain may be invalid when we return from _forceInteractive.
     $initialStepN = Query-RegValue $registryKey "installStep"
-    $initialBodyFinishedFlag = Query-RegValue $registryKey "BodyFinished"
+    $initialBodyFinishedFlag = Query-RegValue $registryKey "BlockIsFinished"
 
     $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.
     $nextOperationN = $OperationN
@@ -122,8 +122,8 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
 
                     if (($curNextOperationN -ne $nextOperationN)) {
                         "_forceInteractive reported an unsuccessful run but OperationNumber changed, indicating that TS was run."  | shoutOut -MsgType Warning
-                        "Since opeartion number changed: verifying that we should still be processing the current operation chain..." | shoutOut -MsgType Warning
-                        $curBodyFinishedFlag = Query-RegValue $registryKey "BodyFinished"
+                        "Since operation number changed: verifying that we should still be processing the current operation chain..." | shoutOut -MsgType Warning
+                        $curBodyFinishedFlag = Query-RegValue $registryKey "BlockIsFinished"
 
                         if ($curBodyFinishedFlag -ne $initialBodyFinishedFlag) {
                             "BodyFinished flag was changed, indicating that the current operations chain is invalid. Stopping processing and returning control to caller." | shoutOut -MsgType Warning
