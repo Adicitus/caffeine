@@ -62,7 +62,7 @@ function _cafVMs {
     $compatibilityReports = $vmfiles | ForEach-Object {
         $file = $_.FullName
 
-        $r = { Compare-VM -Path $file -ErrorAction Stop } | Run-Operation
+        $r = { Compare-VM -Path $file -ErrorAction Stop } | Invoke-ShoutOut
         if ($r -is [System.Management.Automation.ErrorRecord]) {
             switch -Wildcard ($r) {
                 "*Identifier already exists.*" {
@@ -100,7 +100,7 @@ function _cafVMs {
         shoutOut "Importing '$($_.Path)' ('$($_.VM.VMName)')..."
         $_
     } | ForEach-Object {
-        { Import-VM -Path $_.Path } | Run-Operation
+        { Import-VM -Path $_.Path } | Invoke-ShoutOut
     }
     shoutout "Done!" Success
 
@@ -159,7 +159,7 @@ function _cafVMs {
 
         if (!($vm | Get-VMSnapshot)) {
             shoutOut "Adding a snapshot to '$($vm.VMName)'..."
-            { $vm | Checkpoint-VM -SnapshotName "Initial Snapshot" } | Run-Operation | Out-Null
+            { $vm | Checkpoint-VM -SnapshotName "Initial Snapshot" } | Invoke-ShoutOut | Out-Null
             shoutOut "Done!" Success
         }
     }

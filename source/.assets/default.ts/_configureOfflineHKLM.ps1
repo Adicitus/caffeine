@@ -7,9 +7,9 @@ function _configureOfflineHKLM {
     )
     $rootKey = "HKLM\OFFLINE-SOFTWARE"
     shoutOut "Loading offline SOFTWARE hive..." Cyan
-    {reg load $rootKey "$VHDMountDir\Windows\System32\config\SOFTWARE"} | Run-Operation | Out-Null
-    $r = {reg query "$rootKey\"} | Run-Operation
-    if (($r | ? { $_ -match "CAFSetup$" })) { "reg delete $rootKey\CAFSetup /f" | Run-Operation | Out-Null; $r = "reg query `"$rootKey\`"" | Run-Operation | Out-Null } #DEBUG
+    {reg load $rootKey "$VHDMountDir\Windows\System32\config\SOFTWARE"} | Invoke-ShoutOut | Out-Null
+    $r = {reg query "$rootKey\"} | Invoke-ShoutOut
+    if (($r | ? { $_ -match "CAFSetup$" })) { "reg delete $rootKey\CAFSetup /f" | Invoke-ShoutOut | Out-Null; $r = "reg query `"$rootKey\`"" | Invoke-ShoutOut | Out-Null } #DEBUG
         
         
     if ( !($r | ? { $_ -match "CAFSetup$" }) ) {
@@ -27,18 +27,18 @@ function _configureOfflineHKLM {
             { reg query $rootKey\CAFSetup }
         )
 
-        $operations | % { Run-Operation $_ }  | Out-Null
+        $operations | % { Invoke-ShoutOut $_ }  | Out-Null
 
         shoutOut "Done!" Green
     }
 
-    if ( { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" | ? { $_ -match "^\s*CAFAutorunTrigger" } } | Run-Operation |Out-Null) { shoutOut "Deleting old Trigger..." Cyan; { reg delete "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Run-Operation | Out-Null } #DEBUG
+    if ( { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" | ? { $_ -match "^\s*CAFAutorunTrigger" } } | Invoke-ShoutOut |Out-Null) { shoutOut "Deleting old Trigger..." Cyan; { reg delete "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Invoke-ShoutOut | Out-Null } #DEBUG
 
     
-    $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" } | Run-Operation
+    $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" } | Invoke-ShoutOut
     if ( !($r | ? { $_ -match "^\s*CAFAutorunTrigger" }) ) {
         shoutOut "Adding CAF autorun trigger..." Cyan
-        { reg add "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -WindowStyle Hidden -ExecutionPolicy Bypass -NonInteractive -NoProfile -NoLogo -Command ls C:\CAFAutorun -Filter '*.ps1' | ? { . `$_.FullName  }" } | Run-Operation -OutNull
+        { reg add "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -WindowStyle Hidden -ExecutionPolicy Bypass -NonInteractive -NoProfile -NoLogo -Command ls C:\CAFAutorun -Filter '*.ps1' | ? { . `$_.FullName  }" } | Invoke-ShoutOut -OutNull
 
     }
 
@@ -68,11 +68,11 @@ function _configureOfflineHKLM {
     }
 
 
-    $operations | % { Run-Operation $_ } | Out-Null
+    $operations | % { Invoke-ShoutOut $_ } | Out-Null
     shoutOut "Done!" Green
 
         
     shoutOut "Unloading registry...." Cyan
-    { reg unload $rootKey } | Run-Operation | Out-Null
+    { reg unload $rootKey } | Invoke-ShoutOut | Out-Null
 
 }

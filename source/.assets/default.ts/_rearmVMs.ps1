@@ -69,7 +69,7 @@ function _rearmVMs {
         
         $vm = $_
         
-        $preRearmOps | ? { $_ } | % { Run-Operation $_ }
+        $preRearmOps | ? { $_ } | % { Invoke-ShoutOut $_ }
         
         $arCreds = $credentialEntries | ? { $_.Credential -and ($vm.VMName -match $_.VMs) } | % { $_.Credential }
         $success = ActiveRearm-VM $vm $arCreds
@@ -88,7 +88,7 @@ function _rearmVMs {
             $vm | Set-VM -Notes "REARM FAILED DURING SETUP, this machine may need to be rearmed manually.`n$notes"
         }
 
-        $postRearmOps | ? { $_ } | % { Run-Operation $_ }
+        $postRearmOps | ? { $_ } | % { Invoke-ShoutOut $_ }
 
     }
 

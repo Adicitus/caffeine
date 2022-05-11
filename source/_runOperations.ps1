@@ -67,7 +67,7 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
         Set-RegValue $registryKey $registryValue ($n-1)
         if (!$NoRestart) {
             shoutOut "Restarting computer..."
-            { shutdown /r /t 0 } | Run-Operation -OutNull
+            { shutdown /r /t 0 } | Invoke-ShoutOut -OutNull
             exit
         }
     }
@@ -138,7 +138,7 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
 
             }
             default {
-                $o | Run-Operation -OutNull
+                $o | Invoke-ShoutOut -OutNull
             }
         }
         shoutOut "Operation #$OperationN done!" Green

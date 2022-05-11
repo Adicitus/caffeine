@@ -12,11 +12,11 @@ Function _createVMSwitch{
         return
     }
 
-    if ($CurSwitch = { Get-VMSwitch | ? { $_.Name -eq $Config.Name }  } | Run-Operation) {
-        { $CurSwitch | Set-VMSwitch -Notes "Modified during setup of '$NetworkTitle'.`n$($CurSwitch.Notes)" } | Run-Operation
+    if ($CurSwitch = { Get-VMSwitch | ? { $_.Name -eq $Config.Name }  } | Invoke-ShoutOut) {
+        { $CurSwitch | Set-VMSwitch -Notes "Modified during setup of '$NetworkTitle'.`n$($CurSwitch.Notes)" } | Invoke-ShoutOut
     } else {
-        $CurSwitch = { New-VMSwitch -Name $Config.Name -SwitchType Private } | Run-Operation
-        { $CurSwitch | Set-VMSwitch -Notes "Automatically created during setup ('$NetworkTitle')." } | Run-Operation
+        $CurSwitch = { New-VMSwitch -Name $Config.Name -SwitchType Private } | Invoke-ShoutOut
+        { $CurSwitch | Set-VMSwitch -Notes "Automatically created during setup ('$NetworkTitle')." } | Invoke-ShoutOut
     }
 
     if (!$CurSwitch) {
@@ -31,21 +31,21 @@ Function _createVMSwitch{
             shoutOut "$($CurSwitch.Name) is $($CurSwitch.SwitchType), needs to be $($config.type)!" Yellow
             switch ($Config.Type) {
                 $null {
-                    { $CurSwitch | Set-VMSwitch -SwitchType Private } | Run-Operation
+                    { $CurSwitch | Set-VMSwitch -SwitchType Private } | Invoke-ShoutOut
                 }
                 Private {
-                    { $CurSwitch | Set-VMSwitch -SwitchType Private } | Run-Operation
+                    { $CurSwitch | Set-VMSwitch -SwitchType Private } | Invoke-ShoutOut
                 }
                 Internal {
-                    { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Run-Operation
+                    { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Invoke-ShoutOut
                 }
                 External {
                     shoutOut "Selecting adapter..." Cyan
-                    $adapters = { Get-NetAdapter -Physical -ErrorAction SilentlyContinue } | Run-Operation
+                    $adapters = { Get-NetAdapter -Physical -ErrorAction SilentlyContinue } | Invoke-ShoutOut
 
                     $takenAdapters = Get-VMSwitch | ? { $_.NetAdapterInterfaceDescription } | % { $_.NetAdapterInterfaceDescription }
 
-                    $adapters = { $adapters | ? { $_.InterfaceDescription -notin $takenAdapters } } | Run-Operation
+                    $adapters = { $adapters | ? { $_.InterfaceDescription -notin $takenAdapters } } | Invoke-ShoutOut
             
                     if (!$adapters) {
                         shoutOut "No physical network adapters available for '$NetworkTitle'!" Red
@@ -61,11 +61,11 @@ Function _createVMSwitch{
                     }
 
                     $adapter = $adapters | Select -first 1 | % { $_.InterfaceDescription }
-                    { $CurSwitch |Set-VMSwitch -NetAdapterInterfaceDescription $adapter -AllowManagementOS $true} | Run-Operation
+                    { $CurSwitch |Set-VMSwitch -NetAdapterInterfaceDescription $adapter -AllowManagementOS $true} | Invoke-ShoutOut
                 }
                 NAT {
                     # NetNAT is configured in _configureNAT.ps1, just create an internal switch here.
-                    { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Run-Operation
+                    { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Invoke-ShoutOut
                 }
             }
         }
@@ -106,7 +106,7 @@ Function _createVMSwitch{
                 shoutOut "(PrefixLength=$pl)"
             }
             
-            { $adapter | New-NetIPAddress -IPAddress $targetIpAddress -PrefixLength:$pl } | Run-Operation | Out-Null *> $null
+            { $adapter | New-NetIPAddress -IPAddress $targetIpAddress -PrefixLength:$pl } | Invoke-ShoutOut | Out-Null *> $null
         }
     }
 

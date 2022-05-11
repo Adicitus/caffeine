@@ -47,7 +47,7 @@ function _verifyHives {
             "VHD is accessible." | shoutOut
             if (!$vhd.Attached) {
                 "VHD is not mounted, attempting to mount it..." | shoutOUt
-                { $def.Run() } | Run-Operation
+                { $def.Run() } | Invoke-ShoutOut
             } else {
                 "VHD seems to be mounted as disk number {0}." -f $vhd.Number | ShoutOut
             }

@@ -20,7 +20,7 @@ $loadHiveConfigs = { # Closure to update the configuration with hive configurati
                 Parse-ConfigFile $hiveConfig | Out-Null # Assuming we are using a strict parser.
                 shoutOut "Ok!" Green
                 shoutOut "Including hive config @ '$hiveConfig'..." Cyan
-                { Parse-ConfigFile $hiveConfig -NotStrict -Config $conf } | Run-Operation |Out-Null
+                { Parse-ConfigFile $hiveConfig -NotStrict -Config $conf } | Invoke-ShoutOut |Out-Null
             } catch {
                 shoutOut "Invalid config file!" Red
                 shoutOUt "'$_'"
@@ -29,17 +29,17 @@ $loadHiveConfigs = { # Closure to update the configuration with hive configurati
     }
 }
 
-if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have been set up after step 2, looking for configs!
+if ($stepN -gt 2)  { $loadHiveConfigs | Invoke-ShoutOut } # All hives should have been set up after step 2, looking for configs!
 
 @{
     Name="InitializationStep"
     Caption="Initializing the host environment..."
     Block={
-        $r = { Test-Path $JobFile } | Run-Operation
+        $r = { Test-Path $JobFile } | Invoke-ShoutOut
         if (!$r -or $r -is [System.Management.Automation.ErrorRecord]) {
             shoutOut "The specified job file is missing! ('$JobFile')"
         }
-        $r = { Get-NetAdapter | Where-Object { $_.Status -eq "Up" } } | Run-Operation
+        $r = { Get-NetAdapter | Where-Object { $_.Status -eq "Up" } } | Invoke-ShoutOut
         if (!$r -or $r -is [System.Management.Automation.ErrorRecord]) {
             shoutOut "There seems to be no active network adapters on this system!" Yellow
         }
@@ -51,7 +51,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
     Block = {
         $conf.Features.Keys | ForEach-Object {
             ShoutOut " |-> '$_'" White
-            { Install-Feature $_ } | Run-Operation
+            { Install-Feature $_ } | Invoke-ShoutOut
         }
     }
 }
@@ -66,7 +66,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
             _peelPodFile $pod
         }
 
-        $loadHiveConfigs | Run-Operation # All pods have been peeled, ready to look for hives!
+        $loadHiveConfigs | Invoke-ShoutOut # All pods have been peeled, ready to look for hives!
     }
 }
 @{
@@ -104,7 +104,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
             }
             shoutOut "Modifying the taskbar..."
             shoutOut "Available apps:"
-            Run-Operation { (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | ForEach-Object { $_.Name } }
+            Invoke-ShoutOut { (New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | ForEach-Object { $_.Name } }
             
             if ($conf.Taskbar.ContainsKey("Pin")) {
                 $conf.Taskbar.Pin | Where-Object {
@@ -138,19 +138,19 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Run-Operation } # All hives should have 
     Block = {
         
         shoutOut "WinRM state:"
-        {sc.exe queryex winrm} | Run-Operation -OutNull
+        {sc.exe queryex winrm} | Invoke-ShoutOut -OutNull
         shoutOut "Checking WinRM Configuration... " Cyan
-        $winrmConfig = { sc.exe qc winrm } | Run-Operation
+        $winrmConfig = { sc.exe qc winrm } | Invoke-ShoutOut
         if  ( -not (
                     $winrmConfig | Where-Object {
                         $_ -match "START_TYPE\s+:\s+2"
                     }
             )
         ) { # 2=Autostart
-            { sc.exe config winrmstart= auto } | Run-Operation -OutNull
+            { sc.exe config winrmstart= auto } | Invoke-ShoutOut -OutNull
         }
 
-        { sc.exe failure winrm reset= 84600 command= "winrm quickconfig -q -force" actions= restart/2000/run/5000 } | Run-Operation -OutNull
+        { sc.exe failure winrm reset= 84600 command= "winrm quickconfig -q -force" actions= restart/2000/run/5000 } | Invoke-ShoutOut -OutNull
 
 
         shoutOut "Done checking configuration"

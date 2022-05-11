@@ -7,8 +7,8 @@ function _installCAFRegistry {
 
     $caffeineRoot = $PSScriptRoot
 
-    # { reg delete "$registryKey" /f } | Run-Operation #DEBUG
-    # { reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Run-Operation #DEBUG
+    # { reg delete "$registryKey" /f } | Invoke-ShoutOut #DEBUG
+    # { reg delete "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Invoke-ShoutOut #DEBUG
     # Get-ScheduledTask -TaskName "CAFAutorun" | Unregister-ScheduledTask -Confirm:$false #DEBUG
 
     "`$registryKey='{0}'" -f $registryKey | shoutOut
@@ -26,7 +26,7 @@ function _installCAFRegistry {
         )
     
         $operations | ForEach-Object {
-            $_ | Run-Operation
+            $_ | Invoke-ShoutOut
         } | Out-Null
         shoutOut "Done!" Success
 

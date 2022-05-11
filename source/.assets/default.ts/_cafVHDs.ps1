@@ -128,11 +128,11 @@ function _cafVHDs {
             shoutOut "Disk is an snapshot disk, setting up symbolic link trick..." Cyan
             $UsingSymlink = $true
             $VHDFile = "$SymlinkDir`_serviceSymlink.$($Matches.ext)"
-            { cmd /C "mklink `"$VHDFile`" `"$($_.File)`"" } | Run-Operation | Out-Null
+            { cmd /C "mklink `"$VHDFile`" `"$($_.File)`"" } | Invoke-ShoutOut | Out-Null
             shoutOut "Done!" Green
         }
 
-        $r = { . $dism /Get-ImageInfo /ImageFile:"$VHDfile" } | Run-Operation
+        $r = { . $dism /Get-ImageInfo /ImageFile:"$VHDfile" } | Invoke-ShoutOut
         $rf = $r -join "`n"
         if ($rf -match "Error: (?<ErrorCode>(0x)?[0-9A-F]+)") {
             shoutOut " No" Red
@@ -200,7 +200,7 @@ function _cafVHDs {
         $currentVHD = Get-VHD $VHDfile
 
 
-        $r = { $currentVHD | Mount-VHD } | Run-Operation
+        $r = { $currentVHD | Mount-VHD } | Invoke-ShoutOut
         if ($r -is [System.Management.Automation.ErrorRecord]) {
             shoutOut " Failed to mount the VHD!" Red
             return
@@ -248,7 +248,7 @@ function _cafVHDs {
 
             $VHDMountDir = $volumePath
 
-            $r = {. $dism /Image:"$($VHDMountDir)" /Get-CurrentEdition} | Run-Operation
+            $r = {. $dism /Image:"$($VHDMountDir)" /Get-CurrentEdition} | Invoke-ShoutOut
             $rf = $r -join "`n"
 
             if ($rf -match "Error\s*: (?<error>(0x)?[0-9a-f]+)") {
@@ -298,7 +298,7 @@ function _cafVHDs {
                     shoutOut "Missing source file: '$_'" Red
                     return
                 }
-                { Copy-Item "$_" "$VHDMountDir\CAFAutorun\" -Recurse } | Run-Operation | Out-Null
+                { Copy-Item "$_" "$VHDMountDir\CAFAutorun\" -Recurse } | Invoke-ShoutOut | Out-Null
             }
             
             shoutOut "Done!" Green
@@ -356,7 +356,7 @@ function _cafVHDs {
                         $src = $m
                         $srcpath = $src.ModuleBase
 
-                        { robocopy $srcpath "$dstrootpath\$($m.Name)" /S } | Run-Operation
+                        { robocopy $srcpath "$dstrootpath\$($m.Name)" /S } | Invoke-ShoutOut
 
                         "Done!" | shoutOut -MsgType Success
                     } catch {
@@ -369,21 +369,21 @@ function _cafVHDs {
                 $psmdir = "C:\PSModules"
                 "Registering '{0}' to the PSModulePath..." -f $psmdir | shoutOut
                 $rmp = "HKLM\OFFLINE-SYSTEM"
-                Run-Operation { reg load $rmp "$VHDMountDir\Windows\System32\Config\SYSTEM" }
+                Invoke-ShoutOut { reg load $rmp "$VHDMountDir\Windows\System32\Config\SYSTEM" }
 
                 $envKey = "$rmp\ControlSet001\Control\Session Manager\Environment" -replace "HKLM", "HKLM:"
-                $curpsmpstr = { Get-ItemProperty $envKey PSModulePath | ForEach-Object PSModulePath } | Run-Operation
+                $curpsmpstr = { Get-ItemProperty $envKey PSModulePath | ForEach-Object PSModulePath } | Invoke-ShoutOut
 
                 if (!$curpsmpstr.contains($psmdir)) {
                     $curpsmp = $curpsmpstr -split ";"
                     $newpsmp = $curpsmp += $psmdir
                     $newpsmpstr = $newpsmp -join ";"
-                    { Set-ItemProperty $envKey PSModulePath $newpsmpstr } | Run-Operation
+                    { Set-ItemProperty $envKey PSModulePath $newpsmpstr } | Invoke-ShoutOut
                 } else {
                     "'{0}' is already in the PSmodulePath." -f $psmdir | shoutOut -MsgType Success
                 }
 
-                Run-Operation { reg unload $rmp }
+                Invoke-ShoutOut { reg unload $rmp }
 
                 if ($jobFile = $vhdConfig.JobFile) {
                     shoutOut "Trying to include a job file... ('$jobFile')"
@@ -408,19 +408,19 @@ function _cafVHDs {
                     }
 
                     $rmp = "HKLM\OFFLINE-SOFTWARE"
-                    Run-Operation { reg load $rmp "$VHDMountDir\Windows\System32\Config\SOFTWARE" }
+                    Invoke-ShoutOut { reg load $rmp "$VHDMountDir\Windows\System32\Config\SOFTWARE" }
 
                     $winlogon = "$rmp\Microsoft\Windows NT\CurrentVersion\winlogon"
-                    Run-Operation { reg add $winlogon /v AutoAdminLogon /t REG_SZ /d 1 /f }
-                    Run-Operation { reg add $winlogon /v AutoLogonCount /t REG_DWORD /d 9999 /f }
-                    Run-Operation { reg add $winlogon /v DefaultPassword /t REG_SZ /d 1 /f }
-                    Run-Operation { reg add $winlogon /v DefaultUserName /t REG_SZ /d $alu /f }
+                    Invoke-ShoutOut { reg add $winlogon /v AutoAdminLogon /t REG_SZ /d 1 /f }
+                    Invoke-ShoutOut { reg add $winlogon /v AutoLogonCount /t REG_DWORD /d 9999 /f }
+                    Invoke-ShoutOut { reg add $winlogon /v DefaultPassword /t REG_SZ /d 1 /f }
+                    Invoke-ShoutOut { reg add $winlogon /v DefaultUserName /t REG_SZ /d $alu /f }
                     if ($null -ne $ald) {
-                        Run-Operation { reg add $winlogon /v DefaultDomainName /t REG_SZ /d $ald /f }
+                        Invoke-ShoutOut { reg add $winlogon /v DefaultDomainName /t REG_SZ /d $ald /f }
                     }
-                    Run-Operation { reg add $winlogon /v DefaultPassword /t REG_SZ /d $alp /f }
+                    Invoke-ShoutOut { reg add $winlogon /v DefaultPassword /t REG_SZ /d $alp /f }
 
-                    Run-Operation { reg unload $rmp }
+                    Invoke-ShoutOut { reg unload $rmp }
                 }
 
             }
@@ -436,7 +436,7 @@ function _cafVHDs {
                 $intl = $configuration.International
 
                 shoutOut "Loading culture settings..." Cyan
-                $r = { . $dism /Image:"$($VHDMountDir)" /Get-Intl } | Run-Operation
+                $r = { . $dism /Image:"$($VHDMountDir)" /Get-Intl } | Invoke-ShoutOut
                 $rf = $r -join "`n"
             
                 # Available International settings
@@ -457,8 +457,8 @@ function _cafVHDs {
                         $record["[found]$key"] = $Matches.current
                         if ( $Intl[$key] -and ($Intl[$key] -ne $Matches.current) ) {
                             $record["[applied]$key"] = $Intl[$key]
-                            { . $dism /Image:"$($VHDMountDir)" /$($v[0]):$($Intl[$key]) } | Run-Operation | Out-Null
-                            $r = { . $dism /Image:"$($VHDMountDir)" /Get-Intl } | Run-Operation
+                            { . $dism /Image:"$($VHDMountDir)" /$($v[0]):$($Intl[$key]) } | Invoke-ShoutOut | Out-Null
+                            $r = { . $dism /Image:"$($VHDMountDir)" /Get-Intl } | Invoke-ShoutOut
                             $rf = $r -join "`n"
                         }
                     }
@@ -475,7 +475,7 @@ function _cafVHDs {
             #-----------------------------------------------------------------#
         }
 
-        $r = { $currentVHD | Dismount-VHD } | Run-Operation
+        $r = { $currentVHD | Dismount-VHD } | Invoke-ShoutOut
         if (($r | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })) {
             shoutOut "Failed to dismount the VHD!" Red
             $_.UnmountError = $r

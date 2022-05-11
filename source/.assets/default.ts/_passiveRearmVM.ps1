@@ -70,7 +70,7 @@ function _passiveRearmVM {
             } else {
                 shoutOut "Windows directory found!" Green
                 shoutOut "Loading SOFTWARE registry..."
-                { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Run-Operation -OutNull
+                { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Invoke-ShoutOut -OutNull
 
                 foreach( $key in $regConfig.Keys ) {
                     foreach ($value in $regConfig[$key].Keys) {
@@ -84,7 +84,7 @@ function _passiveRearmVM {
                 }
 
                 shoutOut "Unloading SOFTWARE registry..."
-                { reg unload $offlineSoftwareMP } | Run-Operation -OutNull
+                { reg unload $offlineSoftwareMP } | Invoke-ShoutOut -OutNull
 
                 sleep -Milliseconds $vhdCooldownTimeout # sleep to avoid timing error between the dismounting of the VHD and unloading the registry.
             }
@@ -153,20 +153,20 @@ function _passiveRearmVM {
             } else {
                 shoutOut "Windows directory found!" Green
                 shoutOut "Loading SOFTWARE registry..."
-                { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Run-Operation -OutNull
+                { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Invoke-ShoutOut -OutNull
 
                 foreach( $key in $regConfig.Keys ) {
                     foreach ($value in $regConfig[$key].Keys) {
                         if ( $regConfig[$key][$value].Original ) {
                             Set-RegValue $key $value $regConfig[$key][$value].Original | Out-Null
                         } else {
-                            { reg delete $key /v $value /f } | Run-Operation -OutNull
+                            { reg delete $key /v $value /f } | Invoke-ShoutOut -OutNull
                         }
                     }
                 }
 
                 shoutOut "Unloading SOFTWARE registry..."
-                { reg unload $offlineSoftwareMP } | Run-Operation -OutNull
+                { reg unload $offlineSoftwareMP } | Invoke-ShoutOut -OutNull
                 
                 sleep -Milliseconds $vhdCooldownTimeout # sleep to avoid timing error between the dismounting of the VHD and unloading the registry.
             }

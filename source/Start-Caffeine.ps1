@@ -66,7 +66,7 @@ function Start-Caffeine {
     }
 
     shoutOut "Parsing the job file..."
-    $conf = { Parse-ConfigFile $JobFile -NotStrict } | Run-Operation
+    $conf = { Parse-ConfigFile $JobFile -NotStrict } | Invoke-ShoutOut
     if ($conf -isnot [hashtable]) {
         shoutOut "Unable to parse the job file @ '$JobFile'! Quitting!" Error
         return
