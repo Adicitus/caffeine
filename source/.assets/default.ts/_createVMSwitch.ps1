@@ -7,8 +7,8 @@ Function _createVMSwitch{
     )
 
     if (!$config.Name) {
-        shoutOut "No name given for '$NetworkTitle'!" Red
-        shoutOut "Skip!"
+        shoutOut "No name given for '$NetworkTitle'!" Error
+        shoutOut "Skipping!"
         return
     }
 
@@ -26,9 +26,9 @@ Function _createVMSwitch{
 
     if ($config.Type) {
         if ($CurSwitch.SwitchType -eq $config.Type) {
-            shoutOut "$($CurSwitch.Name) is already $($config.type)!" Green 
+            shoutOut "$($CurSwitch.Name) is already $($config.type)!" Success 
         }else {
-            shoutOut "$($CurSwitch.Name) is $($CurSwitch.SwitchType), needs to be $($config.type)!" Yellow
+            shoutOut "$($CurSwitch.Name) is $($CurSwitch.SwitchType), needs to be $($config.type)!" Warning
             switch ($Config.Type) {
                 $null {
                     { $CurSwitch | Set-VMSwitch -SwitchType Private } | Invoke-ShoutOut
@@ -40,7 +40,7 @@ Function _createVMSwitch{
                     { $CurSwitch | Set-VMSwitch -SwitchType Internal } | Invoke-ShoutOut
                 }
                 External {
-                    shoutOut "Selecting adapter..." Cyan
+                    shoutOut "Selecting adapter..."
                     $adapters = { Get-NetAdapter -Physical -ErrorAction SilentlyContinue } | Invoke-ShoutOut
 
                     $takenAdapters = Get-VMSwitch | ? { $_.NetAdapterInterfaceDescription } | % { $_.NetAdapterInterfaceDescription }
@@ -48,14 +48,14 @@ Function _createVMSwitch{
                     $adapters = { $adapters | ? { $_.InterfaceDescription -notin $takenAdapters } } | Invoke-ShoutOut
             
                     if (!$adapters) {
-                        shoutOut "No physical network adapters available for '$NetworkTitle'!" Red
-                        shoutOut "Skip!"
+                        shoutOut "No physical network adapters available for '$NetworkTitle'!" Error
+                        shoutOut "Skipping!" 
                         return
                     }
 
                     $upAdapters =  $adapters | ? { $_.Status -eq 'Up' }
                     if (!$upAdapters) {
-                        shoutOut "None of the available physical adapters seem to be connected!" Yellow
+                        shoutOut "None of the available physical adapters seem to be connected!" Warning
                     } else {
                         $adapters = $upAdapters
                     }
@@ -74,15 +74,15 @@ Function _createVMSwitch{
     $CurSwitch = Get-VMSwitch $Config.Name
 
     if ($CurSwitch.SwitchType -eq "Private") {
-        shoutOut "No further configuration will be done, since the switch is Private." Cyan
-        shoutOut "Done!" Green
+        shoutOut "No further configuration will be done, since the switch is Private."
+        shoutOut "Done!" Success
         return
     } else {
-        shoutOut "Performing additional configuration..." Cyan
+        shoutOut "Performing additional configuration..."
     }
 
     if ($config.IPAddress -or $config.IP) {
-        shoutOut "Checking if we're using the correct IP address" Cyan
+        shoutOut "Checking if we're using the correct IP address"
         $adapter = Get-NetAdapter "*($($CurSwitch.Name))"
         $ipAddress = $adapter | Get-NetIPAddress | % { $_.IPAddress }
         $targetIpAddress = if ($config.IPAddress) {
@@ -92,11 +92,11 @@ Function _createVMSwitch{
         }
 
         if ( !($ipAddress -match $targetIpAddress) ) {
-            shoutOut "Adding new IP address... ($($targetIpAddress))" Cyan
+            shoutOut "Adding new IP address... ($($targetIpAddress))"
             $d = @{ }
             $d.IPAddress = $targetIpAddress
             if (Test-ACGCoreRegexPattern $Config.Netmask IPv4Netmask) {
-                shoutOut "Using netmask '$($Config.Netmask)': " Cyan -NoNewline
+                shoutOut "Using netmask '$($Config.Netmask)': " -NoNewline
                 $bs = ($Config.Netmask -split "\." | % {
                     [Convert]::toString($_,2)
                 }) -join ""
@@ -111,12 +111,12 @@ Function _createVMSwitch{
     }
 
     if ($config.DNS) {
-        shoutOut "Adding DNS addresses..." Cyan
+        shoutOut "Adding DNS addresses..."
         $config.DNS | % {
             if (Test-ACGCoreRegexPattern $_ IPv4Address) {
                 shoutOut "Adding '$_'... " -NoNewline
             } else {
-                shoutOut "Invalid address: '$_'" Red
+                shoutOut "Invalid address: '$_'" Error
                 return
             }
             $adapter = Get-NetAdapter | ? { $_.InterfaceAlias -like "*$($CurSwitch.Name)*" } | Select -First 1
@@ -125,7 +125,7 @@ Function _createVMSwitch{
             if ($DNSAddresses -eq $null) { $DNSAddresses = @() }
 
             if ($DNSAddresses.Contains($_)) {
-                shoutOut "'$_ already added!'" green
+                shoutOut "'$_ already added!'" Success
                 return
             }
             
@@ -136,7 +136,7 @@ Function _createVMSwitch{
             $DNSAddresses[0] = $_
             shoutOut ("[{0}] New DNS server list: {1}" -f $adapter.InterfaceAlias,($DNSAddresses -join ", ") )
             $adapter | Set-DnsClientServerAddress -ServerAddresses $DNSAddresses
-            shoutOut "Done adding $_!" Green
+            shoutOut "Done adding $_!" Success
         }
     }
 
@@ -149,5 +149,5 @@ Function _createVMSwitch{
         # Proceed with caution.
     }
 
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 }

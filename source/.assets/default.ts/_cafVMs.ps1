@@ -54,7 +54,7 @@ function _cafVMs {
                 $f -like "$_*"
             })
         }
-        shoutOut " Done!" Green
+        shoutOut " Done!" Success
         "Kept {0} VM files..." -f $vmfiles.Count | shoutOut
     }
 

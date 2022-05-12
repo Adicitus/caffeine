@@ -14,7 +14,7 @@ function _configureOfflineHKLM {
         
     if ( !($r | ? { $_ -match "CAFSetup$" }) ) {
             
-        shoutOut "Setting up local CAF..." Cyan
+        shoutOut "Setting up local CAF..."
         
         $operations = @(
             { reg add "$rootKey\CAFSetup" },
@@ -29,7 +29,7 @@ function _configureOfflineHKLM {
 
         $operations | % { Invoke-ShoutOut $_ }  | Out-Null
 
-        shoutOut "Done!" Green
+        shoutOut "Done!" Success
     }
 
     if ( { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" | ? { $_ -match "^\s*CAFAutorunTrigger" } } | Invoke-ShoutOut |Out-Null) { shoutOut "Deleting old Trigger..." Cyan; { reg delete "$rootKey\Microsoft\Windows\CurrentVersion\Run" /v CAFAutorunTrigger /f } | Invoke-ShoutOut | Out-Null } #DEBUG
@@ -37,13 +37,13 @@ function _configureOfflineHKLM {
     
     $r = { reg query "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" } | Invoke-ShoutOut
     if ( !($r | ? { $_ -match "^\s*CAFAutorunTrigger" }) ) {
-        shoutOut "Adding CAF autorun trigger..." Cyan
+        shoutOut "Adding CAF autorun trigger..."
         { reg add "$rootKey\Microsoft\Windows\CurrentVersion\RunOnce" /v CAFAutorunTrigger /t REG_SZ /d "Powershell -WindowStyle Hidden -ExecutionPolicy Bypass -NonInteractive -NoProfile -NoLogo -Command ls C:\CAFAutorun -Filter '*.ps1' | ? { . `$_.FullName  }" } | Invoke-ShoutOut -OutNull
 
     }
 
 
-    shoutOut "Making Quality of Life changes to hive..." Cyan
+    shoutOut "Making Quality of Life changes to hive..."
 
     $operations = @(
         # Prevent UAC consent prompts for admins, as described @ http://www.ghacks.net/2013/06/20/how-to-configure-windows-uac-prompt-behavior-for-admins-and-users/
@@ -69,10 +69,10 @@ function _configureOfflineHKLM {
 
 
     $operations | % { Invoke-ShoutOut $_ } | Out-Null
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 
         
-    shoutOut "Unloading registry...." Cyan
+    shoutOut "Unloading registry...."
     { reg unload $rootKey } | Invoke-ShoutOut | Out-Null
 
 }

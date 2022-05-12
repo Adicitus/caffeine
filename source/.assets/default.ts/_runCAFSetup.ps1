@@ -21,13 +21,13 @@ function _runCAFSetup {
     )
 
     if ($Configuration -is [System.Management.Automation.ErrorRecord]) {
-        shoutOut "Unable to load the configuration file! Aborting CAFSetup" Red
+        shoutOut "Unable to load the configuration file! Aborting CAFSetup" Error
         return
     }
 
     $networks = $Configuration.Keys | Where-Object { $_ -match "^Network" } 
 
-    shoutOut "Configuring VMSwitches..." Cyan
+    shoutOut "Configuring VMSwitches..."
     $networks | ForEach-Object {
         _createVMSwitch $_ $Configuration[$_]
     }

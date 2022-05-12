@@ -19,10 +19,10 @@ $loadHiveConfigs = { # Closure to update the configuration with hive configurati
             try {
                 Parse-ConfigFile $hiveConfig | Out-Null # Assuming we are using a strict parser.
                 shoutOut "Ok!" Green
-                shoutOut "Including hive config @ '$hiveConfig'..." Cyan
+                shoutOut "Including hive config @ '$hiveConfig'..." Info
                 { Parse-ConfigFile $hiveConfig -NotStrict -Config $conf } | Invoke-ShoutOut |Out-Null
             } catch {
-                shoutOut "Invalid config file!" Red
+                shoutOut "Invalid config file!" Error
                 shoutOUt "'$_'"
             }
         }
@@ -41,7 +41,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Invoke-ShoutOut } # All hives should hav
         }
         $r = { Get-NetAdapter | Where-Object { $_.Status -eq "Up" } } | Invoke-ShoutOut
         if (!$r -or $r -is [System.Management.Automation.ErrorRecord]) {
-            shoutOut "There seems to be no active network adapters on this system!" Yellow
+            shoutOut "There seems to be no active network adapters on this system!" Warning
         }
     }
 }
@@ -50,7 +50,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Invoke-ShoutOut } # All hives should hav
     Caption="Installing required features..."
     Block = {
         $conf.Features.Keys | ForEach-Object {
-            ShoutOut " |-> '$_'" White
+            ShoutOut " |-> '$_'" Result
             { Install-Feature $_ } | Invoke-ShoutOut
         }
     }
@@ -139,7 +139,7 @@ if ($stepN -gt 2)  { $loadHiveConfigs | Invoke-ShoutOut } # All hives should hav
         
         shoutOut "WinRM state:"
         {sc.exe queryex winrm} | Invoke-ShoutOut -OutNull
-        shoutOut "Checking WinRM Configuration... " Cyan
+        shoutOut "Checking WinRM Configuration... " Info
         $winrmConfig = { sc.exe qc winrm } | Invoke-ShoutOut
         if  ( -not (
                     $winrmConfig | Where-Object {

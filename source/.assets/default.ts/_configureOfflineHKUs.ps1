@@ -13,11 +13,12 @@ function _configureOfflineHKUs {
     $hives | % {
         $hive = $_
 
-        shoutOut "Loading offline '$($hive)' hive..." Cyan
+        shoutOut "Loading offline '$($hive)' hive..."
         $r = {reg load $rootKey "$($hive)"} | Invoke-ShoutOut
         $rf = $r -join "`n"
         if ($rf -match "Error\s?: ") {
-            shoutOut "Unable to mount the hive!" Red
+            shoutOut "Unable to mount the hive!" Error
+            shoutOUt $rf -MsgType Error
             return
         }
 

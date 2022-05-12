@@ -73,7 +73,7 @@ function _cafVHDs {
     
     shoutOut "Running as '$($Env:USERNAME)'..."
 
-    shoutOut "Initializing VHD records..." Cyan
+    shoutOut "Initializing VHD records..."
     $t = $VMFolders | Get-ChildItem -Recurse -File | Where-Object { $_.Name -match "\.(a)?vhd(x)?$" }
     $t = $t | Where-Object { $p = $_.FullName; -not ($excludePaths | Where-Object { $p -like $_ }) }
     shoutOut ("Found {0} VHD files..." -f @($t).Count)
@@ -91,30 +91,30 @@ function _cafVHDs {
         $r.IsChild = if ($r.VHD.ParentPath) { $true } else { $false }
         $r
     }
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 
     
-    shoutOut "Discovering parent relationships..." Cyan
+    shoutOut "Discovering parent relationships..."
     foreach ($record in $VHDRecords) {
         if ($record.VHD.ParentPath) {
             $parentRecord = $VHDRecords | Where-Object { $_.File -eq $record.VHD.ParentPath }
             if ($parentRecord) {
-                shoutOut "'$($parentrecord.File)' is parent of '$($record.File)'" White
+                shoutOut "'$($parentrecord.File)' is parent of '$($record.File)'"
                 $parentRecord.IsParent = $true
             }
         } else {
             $record.IsBaseDisk = $true
         }
     }
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 
     
-    shoutOut "Identifying VHDs with Windows system volumes..." Cyan
+    shoutOut "Identifying VHDs with Windows system volumes..."
     $VHDRecords | ForEach-Object {
-        shoutOut "Checking " Cyan -NoNewline
-        shoutOut "$($_.File)" Gray
+        shoutOut "Checking " -NoNewline
+        shoutOut "$($_.File)"
         if ($_.IsParent) { 
-            shoutOut " Skipping! (is a parent)" White
+            shoutOut " Skipping! (is a parent)"
             return
         }
 
@@ -125,20 +125,20 @@ function _cafVHDs {
         # files with such an extension as an argument. So we create a
         # symbolic link with an accepted extension.
         if ($VHDFile -match ".a(?<ext>vhd(x)?)$") {
-            shoutOut "Disk is an snapshot disk, setting up symbolic link trick..." Cyan
+            shoutOut "Disk is an snapshot disk, setting up symbolic link trick..."
             $UsingSymlink = $true
             $VHDFile = "$SymlinkDir`_serviceSymlink.$($Matches.ext)"
             { cmd /C "mklink `"$VHDFile`" `"$($_.File)`"" } | Invoke-ShoutOut | Out-Null
-            shoutOut "Done!" Green
+            shoutOut "Done!" Success
         }
 
         $r = { . $dism /Get-ImageInfo /ImageFile:"$VHDfile" } | Invoke-ShoutOut
         $rf = $r -join "`n"
         if ($rf -match "Error: (?<ErrorCode>(0x)?[0-9A-F]+)") {
-            shoutOut " No" Red
+            shoutOut " No" Error
             $_.ErrorCode = $Matches.ErrorCode
         } else {
-            shoutOut " Yes" Green
+            shoutOut " Yes" Success
             $_.Volumes = @()
             $i64c = New-Object System.ComponentModel.Int64Converter
             for($i = 0; $i -lt $r.Length; $i++) {
@@ -163,12 +163,12 @@ function _cafVHDs {
         }
 
         if ($UsingSymlink) {
-            shoutout "Removing symlink... " Cyan -NoNewline
+            shoutout "Removing symlink... " -NoNewline
             Remove-Item $VHDfile
-            shoutOut "Done!" Green
+            shoutOut "Done!" Success
         }
     }
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 
     if (($c = $Configuration["CAF-VHDs"]) -and ($c.ContainsKey("NoFix"))) {
         $noFixPaths = @($c.NoFix)
@@ -182,7 +182,7 @@ function _cafVHDs {
         $fixPaths = @()
     }
     
-    shoutOut "Analyzing and fixing the offline images..." Cyan
+    shoutOut "Analyzing and fixing the offline images..." Info
     $VHDRecords | ForEach-Object {
         
         $record  = $_
@@ -193,7 +193,7 @@ function _cafVHDs {
             return
         }
 
-        shoutOut " Mounting as a VHD..." Cyan
+        shoutOut " Mounting as a VHD..." Info
         
 
         $VHDfile = $record.File
@@ -202,7 +202,7 @@ function _cafVHDs {
 
         $r = { $currentVHD | Mount-VHD } | Invoke-ShoutOut
         if ($r -is [System.Management.Automation.ErrorRecord]) {
-            shoutOut " Failed to mount the VHD!" Red
+            shoutOut " Failed to mount the VHD!" Error
             return
         }
 
@@ -226,7 +226,7 @@ function _cafVHDs {
                 shoutOut "No path available to partition #$($partition.PartitionNumber), skipping..."
                 return
             } else {
-                shoutOut "Partition #$($partition.PartitionNumber) has a path '$($volumePath)'." Green
+                shoutOut "Partition #$($partition.PartitionNumber) has a path '$($volumePath)'." Success
             }
             
             if (!(Test-path $volumePath)) {
@@ -252,7 +252,7 @@ function _cafVHDs {
             $rf = $r -join "`n"
 
             if ($rf -match "Error\s*: (?<error>(0x)?[0-9a-f]+)") {
-                shoutOut "Unable to find a Windows installation at '$VHDMountDir'" Red
+                shoutOut "Unable to find a Windows installation at '$VHDMountDir'" Error
                 if ($cleanupTemporaryAccessPath) { . $cleanupTemporaryAccessPath }
                 return
             }
@@ -280,28 +280,28 @@ function _cafVHDs {
             if ((Test-Path "$VHDMountDir\CAFAutorun")) { Remove-Item -Recurse -Force "$VHDMountDir\CAFAutorun" } #DEBUG
 
             if ( !(Test-Path "$VHDMountDir\CAFAutorun") ) {
-                shoutOut "Creating the CAF autorun folder..." Cyan
+                shoutOut "Creating the CAF autorun folder..." Info
                 $item = New-Item "$VHDMountDir\CAFAutorun" -ItemType Directory
-                shoutOut "Hiding the folder..." Cyan
+                shoutOut "Hiding the folder..." Info
                 $item | Set-ItemProperty -Name Attributes -Value ([System.IO.FileAttributes]::Hidden)
 
             }
 
             if ($fs = Get-ChildItem "$VHDMountDir\CAFAutorun\*" ) {
-                shoutOut "Clearing out the CAFAutorun folder..." Cyan
+                shoutOut "Clearing out the CAFAutorun folder..." Info
                 $fs | Remove-Item -Recurse -Force
-                shoutOut "Done!" Green
+                shoutOut "Done!" Success
             }
             shoutOut "Populating the CAFAutorun folder..."
             $AutorunFiles | ForEach-Object {
                 if (!(Test-Path $_)) {
-                    shoutOut "Missing source file: '$_'" Red
+                    shoutOut "Missing source file: '$_'" Error
                     return
                 }
                 { Copy-Item "$_" "$VHDMountDir\CAFAutorun\" -Recurse } | Invoke-ShoutOut | Out-Null
             }
             
-            shoutOut "Done!" Green
+            shoutOut "Done!" Success
 
             if ($vhdConfig = $Configuration[$record.FileItem.Name]) {
 
@@ -398,7 +398,7 @@ function _cafVHDs {
 
                         Copy-Item $jobFile $jobFileDest
                     } else {
-                        shoutOut "Unable to find the desired job file!" Red
+                        shoutOut "Unable to find the desired job file!" Error
                     }
                 }
 
@@ -431,7 +431,7 @@ function _cafVHDs {
             $localeRegex  = "($localeNameRegex|$localeIdRegex1|$localeIdRegex2)"
         
             if ($Configuration.International -is [hashtable]) {
-                shoutOut "Verifying culture settings against the configuration..." Cyan
+                shoutOut "Verifying culture settings against the configuration..." Info
 
                 $intl = $configuration.International
 
@@ -477,17 +477,17 @@ function _cafVHDs {
 
         $r = { $currentVHD | Dismount-VHD } | Invoke-ShoutOut
         if (($r | Where-Object { $_ -is [System.Management.Automation.ErrorRecord] })) {
-            shoutOut "Failed to dismount the VHD!" Red
+            shoutOut "Failed to dismount the VHD!" Error
             $_.UnmountError = $r
             shoutOut $r
         }
 
-        ShoutOut "Done!" Green
+        ShoutOut "Done!" Success
     }
 
     $CAFDuration = (Get-Date) - $CAFStartTime
 
-    shoutOut "CAF Done! ($($CAFDuration.TotalSeconds) seconds)" Green
+    shoutOut "CAF Done! ($($CAFDuration.TotalSeconds) seconds)" Success
 
     return $VHDRecords
 }

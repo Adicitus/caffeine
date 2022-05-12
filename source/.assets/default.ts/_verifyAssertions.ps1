@@ -99,7 +99,7 @@ function _verifyAssertions{
             if ( $assertTypes.ContainsKey($t) ) {
                 $assert.type = $t
             } else {
-                shoutOut ("Invalid Assert type specified for '{0}' ('{1}'). Available types are: {2}" -f $_.Name,$t,($assertTypes.Keys -join ", ")) Red
+                shoutOut ("Invalid Assert type specified for '{0}' ('{1}'). Available types are: {2}" -f $_.Name,$t,($assertTypes.Keys -join ", ")) Error
             }
         }
 

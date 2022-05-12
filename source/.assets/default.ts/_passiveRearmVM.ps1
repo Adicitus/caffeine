@@ -14,7 +14,7 @@ function _passiveRearmVM {
         $RearmTimeout2 = 240000
     )
 
-    shoutOut ("Attempting Passive Rearm: $($vm.VMName) ".PadRight(80,'=')) Magenta
+    shoutOut ("Attempting Passive Rearm: $($vm.VMName) ".PadRight(80,'='))
     shoutOut ("Credentials: {0}\{1}, {2}" -f $credentialEntry.Domain,$credentialEntry.Username,$credentialEntry.Password)
 
     $offlineSoftwareMP = "HKLM\OFFLINE-SOFTWARE"
@@ -68,7 +68,7 @@ function _passiveRearmVM {
                 shoutOut "No windows directory, Skip!"
                 continue
             } else {
-                shoutOut "Windows directory found!" Green
+                shoutOut "Windows directory found!" Success
                 shoutOut "Loading SOFTWARE registry..."
                 { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Invoke-ShoutOut -OutNull
 
@@ -113,12 +113,12 @@ function _passiveRearmVM {
     while ($vm.state -eq "Running") {
         $duration = (Get-Date) - $rearmStart
         if ($duration.TotalMilliseconds -ge $rearmTimeout1) {
-            shoutOut "Rearm timed out! Shutting down..." Red
+            shoutOut "Rearm timed out! Shutting down..." Warning
             $success = $false
             $vm | Stop-VM -Force
         }
         if ($duration.TotalMilliseconds -ge $rearmTimeout2) {
-            shoutOut "Rearm timed out! Forcing TurnOff..." Red
+            shoutOut "Rearm timed out! Forcing TurnOff..." Warning
             $vm | Stop-VM -TurnOff -Force
             break
         }
@@ -151,7 +151,7 @@ function _passiveRearmVM {
                 shoutOut "No windows directory, Skip!"
                 continue
             } else {
-                shoutOut "Windows directory found!" Green
+                shoutOut "Windows directory found!" Success
                 shoutOut "Loading SOFTWARE registry..."
                 { reg load $offlineSoftwareMP "${Path}Windows\System32\Config\SOFTWARE" } | Invoke-ShoutOut -OutNull
 

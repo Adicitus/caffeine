@@ -7,7 +7,7 @@ function _rearmVMs {
         [parameter(position=2)]$Configuration = @{ }
     )
 
-    shoutOut "Selecting Credentials... " Cyan
+    shoutOut "Selecting Credentials... "
     $credentialEntries = $Configuration.Keys -match "^Credential" | ? {
         $entry = $Configuration[$_]
         return $entry -is [hashtable] -and $entry.ContainsKey("VMs")
@@ -43,7 +43,7 @@ function _rearmVMs {
         )
     }
 
-    shoutOut "Using these credentials..." Cyan
+    shoutOut "Using these credentials..."
     shoutOut ($credentialEntries | ConvertTo-Json -Depth 2)
 
     $Credentials = $credentialEntries | % {
@@ -83,7 +83,7 @@ function _rearmVMs {
         }
         
         if (!$success) {
-            shoutOut "Failed to rearm '$($vm.VMName)'!" Red
+            shoutOut "Failed to rearm '$($vm.VMName)'!" Error
             $notes = $vm.Notes
             $vm | Set-VM -Notes "REARM FAILED DURING SETUP, this machine may need to be rearmed manually.`n$notes"
         }
@@ -92,5 +92,5 @@ function _rearmVMs {
 
     }
 
-    shoutOut "VM Rearm check finished..." Green
+    shoutOut "VM Rearm check finished..." Success
 }
