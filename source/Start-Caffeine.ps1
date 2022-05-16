@@ -26,9 +26,9 @@ function Start-Caffeine {
         $LogDir = "C:\CaffeineLogs"
     )
 
-    # =========================================================================== #
-    # ======================== Start: Main script body ========================== #
-    # =========================================================================== #
+    # =================================================================================== #
+    # ============================ Start: Main script body ============================== #
+    # =================================================================================== #
 
     $i = whoami.exe
     $d, $u = $i.split("\")
@@ -78,18 +78,26 @@ function Start-Caffeine {
     # ===================== End: Getting job configuration ====================== #
     # =========================================================================== #
 
-    _installCAFRegistry $registryKey $JobFile
-
-    $stepN = Query-RegValue  $registryKey "InstallStep"
-
     # =========================================================================== #
     # ==================== Start: Defining setup-sequence ======================= #
     # =========================================================================== #
 
     $tsf = $conf.Global.TaskSequenceFile | Select-Object -Last 1
-    if (!($tsf -is [string] -and (Test-Path $tsf))) {
-        $tsf = "$PSScriptRoot\.assets\default.ts\default.ts.ps1"
+    
+    if ($null -eq $tsf) {
+        throw "No task sequnce file specified in the configuration (should be defined as TaskSequenceFile declaration in the Global section)"
     }
+
+    if ($tsf -isnot [string]) {
+        $msg = "Invalid value for TaskSequenceFile specified. Expected a String, found '{0}' ({1})." -f $tsf.GetType().Name, $tsf
+        throw $msg
+    }
+
+    if (-not (Test-Path $tsf -PathType Leaf)) {
+        $msg = "TaskSequenceFile not found. Expected it to be @ '{0}'." -f $tsf
+        throw $msg
+    }
+
     "Using task sequence defined in '{0}'..." -f $tsf | shoutOut
     $installSteps = New-Object System.Collections.ArrayList
     $n = 0
@@ -108,6 +116,7 @@ function Start-Caffeine {
     # ======================= Start: Setup-Sequence loop ======================== #
     # =========================================================================== #
 
+    $stepN = Query-RegValue  $registryKey "InstallStep"
     $OperationVars = @{}
 
     shoutOut "Running pre-setup operations..."
@@ -170,7 +179,7 @@ function Start-Caffeine {
 
     shoutOut "Caffeination done!" Green
 
-    # =========================================================================== #
-    # ========================= End: Main script body =========================== #
-    # =========================================================================== #
+    # =================================================================================== #
+    # ============================= End: Main script body =============================== #
+    # =================================================================================== #
 }

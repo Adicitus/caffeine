@@ -31,6 +31,10 @@ function Install-Caffeine {
     Set-ShoutOutDefaultLog -LogFilePath $installLogFile
 
     "Install started @ {0:yyyy/MM/dd-HH:mm:ss}" -f [datetime]::now | shoutOut
+    
+
+    $registryKey = "HKLM\SOFTWARE\CAFSetup"
+    shoutOut "Using registry key '$registryKey'..."
 
     $cmd = 'Install-Caffeine -SetupFile {0} -LogDir {1}' -f $SetupFile, $LogDir
     if ($StartImmediately) {
@@ -59,6 +63,7 @@ function Install-Caffeine {
     $setup = Parse-ConfigFile $SetupFile
 
     _ensureAutoLogon $Setup $tmpDir
+    _installCAFRegistry $registryKey $SetupFile
 
     $caffeineTaskName = "Start Caffeine"
     if ($oldTask = Get-ScheduledTask $caffeineTaskName) {
