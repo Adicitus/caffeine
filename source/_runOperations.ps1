@@ -87,7 +87,7 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
 
     Set-Regvalue $registryKey $registryValue ($OperationN+1) | Out-Null # Increment the pointer.
     while ( $Operations -and ($o = @($Operations)[$OperationN]) ) {
-        shoutOut "Operation #$OperationN... " cyan
+        shoutOut "Operation #$OperationN... "
         switch ($o) {
             "CAFRestart" {
                 shoutOut "CAFRestart operation, Restarting host..."
@@ -97,8 +97,8 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
             }
             "CAFForceInteractive" {
 
-                shoutOut "CAFForceInteractive operation." Cyan
-                shoutOut "Attempting to enter into an interactive user session." Cyan
+                shoutOut "CAFForceInteractive operation."
+                shoutOut "Attempting to enter into an interactive user session."
 
                 $r = _forceInteractive $conf
                 
@@ -141,7 +141,7 @@ function _runOperations($registryKey, $registryValue="NextOperation", $Operation
                 $o | Invoke-ShoutOut -OutNull
             }
         }
-        shoutOut "Operation #$OperationN done!" Green
+        shoutOut "Operation #$OperationN done!" Success
 
         if ($shouldIncrement) {
             $OperationN = Query-RegValue $registryKey $registryValue # Get the current index of the pointer.

@@ -72,7 +72,7 @@ function Start-Caffeine {
         return
     }
 
-    shoutOut "Done!" Green
+    shoutOut "Done!" Success
 
     # =========================================================================== #
     # ===================== End: Getting job configuration ====================== #
@@ -177,7 +177,7 @@ function Start-Caffeine {
     # ======================== End: Setup-Sequence loop ========================= #
     # =========================================================================== #
 
-    shoutOut "Caffeination done!" Green
+    shoutOut "Caffeination done!" Success
 
     # =================================================================================== #
     # ============================= End: Main script body =============================== #
