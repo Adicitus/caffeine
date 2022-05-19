@@ -39,7 +39,7 @@ function Start-Caffeine {
     }
     $LogFile = "{0}\run.{1:yyyyMMdd-HHmmss}.{2}.{3}.log" -f $logDir, [datetime]::now, $a, $PID
 
-    Set-ShoutOutConfig -LogFile $LogFile
+    Set-ShoutOutDefaultLog -LogFile $LogFile
 
     shoutOut "Starting caffeination..."
 
