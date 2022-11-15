@@ -60,7 +60,7 @@ function Install-Caffeine {
 
     if (-not (Test-Path $tmpDir -PathType Container)) { mkdir $tmpDir }
 
-    $setup = Parse-ConfigFile $SetupFile
+    $setup = Read-ConfigFile $SetupFile
 
     _ensureAutoLogon $Setup $tmpDir
     _installCAFRegistry $registryKey $SetupFile

@@ -33,7 +33,7 @@ function _ensureAutoLogon {
         $outputFile = "$tmpDir\winlogon.reg"
 
         "Generating .reg file from template ('{0}') -> {1}" -f $templateFile, $outputFile | shoutOut
-        Render-template $templateFile $autologon > $outputFile
+        Format-Template $templateFile $autologon > $outputFile
         "Importing the .reg file..." | shoutOut
         reg import $outputFile | shoutOut
     }

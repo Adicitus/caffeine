@@ -55,7 +55,7 @@ function Start-Caffeine {
     if (!$jobFile) {
         shoutOut "No job file specified, attempting to select one..." -NoNewline
         $JobFile = "C:\setup\setup.ini"
-        $f = Query-RegValue $registryKey "JobFile"
+        $f = Get-RegValue $registryKey "JobFile"
         if ($f) { $JobFile = $f }
         shoutOut " Using $JobFile..."
     }
@@ -66,7 +66,7 @@ function Start-Caffeine {
     }
 
     shoutOut "Parsing the job file..."
-    $conf = { Parse-ConfigFile $JobFile -NotStrict } | Invoke-ShoutOut
+    $conf = { Read-ConfigFile $JobFile -NotStrict } | Invoke-ShoutOut
     if ($conf -isnot [hashtable]) {
         shoutOut "Unable to parse the job file @ '$JobFile'! Quitting!" Error
         return
@@ -116,7 +116,7 @@ function Start-Caffeine {
     # ======================= Start: Setup-Sequence loop ======================== #
     # =========================================================================== #
 
-    $stepN = Query-RegValue  $registryKey "InstallStep"
+    $stepN = Get-RegValue  $registryKey "InstallStep"
     $OperationVars = @{}
 
     shoutOut "Running pre-setup operations..."
@@ -129,7 +129,7 @@ function Start-Caffeine {
         ShoutOut "Installation step: $stepN ($($step.Name))"
         ShoutOut ("=" * 80)
         
-        $blockIsFinished = Query-Regvalue $registryKey "BlockIsFinished"
+        $blockIsFinished = Get-RegValue $registryKey "BlockIsFinished"
         
         if (-not $blockIsFinished) {
             shoutOut "Running PRE operations..."
